@@ -12,6 +12,8 @@ int main(int argc, char* argv[]){
 	int i=1505;
 	int imax=atoi(argv[2]);
 	string folder=argv[1];
+	string prefix="";
+	if(argc==4) prefix=argv[3];
     namedWindow("display1",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
 	resizeWindow("display1",800,600);
     
@@ -25,7 +27,7 @@ int main(int argc, char* argv[]){
 
 	while(c!='q'){
 		    stringstream ss;
-			ss<<folder<<"/0.tiff";
+			ss<<folder<<"/"<<prefix<<"0.tiff";
 			Mat img=imread(ss.str().c_str(),IMREAD_UNCHANGED);
 		    img.copyTo(draw);
 			if(p.status) {
@@ -44,7 +46,7 @@ int main(int argc, char* argv[]){
 	c='1';
 	while(c!='q'){
 		stringstream ss;
-		ss<<folder<<'/'<<i<<".tiff";
+		ss<<folder<<'/'<<prefix<<i<<".tiff";
 		Mat img=imread(ss.str().c_str(),IMREAD_UNCHANGED);
 		Mat ones(img.rows,img.cols,CV_32F,Scalar(1));
 		img.convertTo(img,CV_32F,1./255);
