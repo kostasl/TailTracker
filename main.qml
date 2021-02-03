@@ -9,14 +9,18 @@ Window {
     color: "#729fcf"
     title: qsTr("2p microscope camera tail tracker ")
     signal qmlSignal(string msg)
+//    onContentItemChanged: {
+//            qmlSignal("Change");
+//    }
+
 
     Text {
         id: txtLog
         objectName: "txtLog"
         x: 7
-        y: 387
+        y: 330
         width: 626
-        height: 75
+        height: 132
         text: qsTr("Tracker activity Log ")
         transformOrigin: Item.TopLeft
         styleColor: "#588076"
@@ -33,19 +37,48 @@ Window {
     Image {
         id: videoImage
         objectName: "imgTracker"
-        x: 33
-        y: 34
+        x: 195
+        y: 38
         width: 250
         height: 250
         fillMode: Image.PreserveAspectFit
         source: "image://trackerframe/1"
-    }
+        onStatusChanged: {
+               //   if(status == Image.Ready)
+                      //indicator.running = false;
+                      //console.log("Img")
+              }
 
-    MouseArea {
-        id: mouseArea
-        x: 18
-        y: 22
-        width: 295
-        height: 292
+        MouseArea {
+                  objectName: "imgMouseArea"
+                  anchors.fill: parent
+                  acceptedButtons: Qt.LeftButton | Qt.RightButton
+                  anchors.rightMargin: 0
+                  anchors.bottomMargin: 0
+                  anchors.leftMargin: 0
+                  anchors.topMargin: 0
+                  signal qmlMouseClickSig()
+                  signal qmlMouseDragSig()
+                  onClicked: {
+                      //indicator.running = true;
+                      //console.log("irregular area clicked");
+                      qmlMouseClickSig();
+                      //videoImage.source = "image://trackerframe/" + Math.random(1000)
+                  }
+                  onDoubleClicked: qmlMouseClickSig()
+                  onPositionChanged: {
+                      //Draging Motion
+                      qmlMouseDragSig();
+                  }
+
+        }
+
+//        BusyIndicator {
+//            id: indicator
+//            anchors.centerIn: parent
+//            running: false
+//        }
+
+
     }
 }

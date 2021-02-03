@@ -2,15 +2,27 @@
 
 mainwindow::mainwindow(QQmlApplicationEngine& engine)
 {
+      // Get Form Object Pointers And Connect Signaling slots
+      QObject* oWindow = engine.rootObjects().first();
 
-     QObject* oWindow = engine.rootObjects().first();
      QObject::connect(oWindow  , SIGNAL(qmlSignal(QString)),
                       this, SLOT(cppSlot(QString)));
+
+     oMouseArea = oWindow->findChild<QObject*>(QString("imgMouseArea"));
+     QObject::connect(oMouseArea   , SIGNAL(qmlMouseClickSig()),
+                      this, SLOT(mouseClickSlot()));
+
+     QObject::connect(oMouseArea  , SIGNAL(clicked(QMouseEvent)),
+                      this, SLOT(OnClickSlot(QMouseEvent)));
+
+     QObject::connect(oMouseArea  , SIGNAL(qmlMouseDragSig()),
+                      this, SLOT(mouseDragSlot()));
+
 
      // Fetch Point to Window Object
      txtLog = (oWindow->findChild<QObject*>("txtLog")); //QTextObject
      imgScene = (oWindow->findChild<QObject*>("imgTracker")); //Image Item /Connected to custom ImageProvider
-
+     //Pointer to The QImage Type - where we draw the tracker images
      ptrackerView = (trackerImageProvider*)engine.imageProvider("trackerframe");
 }
 

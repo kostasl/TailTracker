@@ -43,8 +43,8 @@ using namespace cv;
 //
 unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 {
-    cv::namedWindow("Trackerdisplay",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-    cv::resizeWindow("Trackerdisplay",250,250);
+    //cv::namedWindow("Trackerdisplay",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
+    //cv::resizeWindow("Trackerdisplay",250,250);
 
 
     QElapsedTimer otLastUpdate; //Time Since Last Progress Report
@@ -180,12 +180,13 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
          }
 
          /// Start Processing The Frame
-         //outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
          outframe = frame.clone();
+        //Process And Track  Tail
 
-         cv::imshow("Trackerdisplay",frame );
-         if (nFrame > 100)
-            window_main.showCVImage(frame, nFrame);
+        //cv::imshow("Trackerdisplay",frame );
+
+        // Display video Image on GUI
+        window_main.showCVImage(outframe, nFrame);
 
          trackerState.processInputKey(cv::waitKey(1));
 

@@ -11,6 +11,7 @@
 #include <QPixmap>
 #include <QImage>
 #include <QQuickImageProvider>
+#include <QMouseEvent>
 //#include <QtOpencvCore>
 
 #include <opencv2/highgui/highgui.hpp>
@@ -28,8 +29,19 @@ public:
     Q_OBJECT
    public slots:
        void cppSlot(const QString &msg) {
-           qDebug() << "Called the C++ slot with message:" << msg;
+           qDebug() << "Called the cpp C++ slot with message:" << msg;
        }
+       void mouseClickSlot() {
+           mouseX = oMouseArea->property("mouseX").toInt();
+           mouseY = oMouseArea->property("mouseY").toInt();
+               qDebug() << "Mouse Click slot coords:" << mouseX << "," << mouseY;
+       }
+       void mouseDragSlot() {
+           mouseX = oMouseArea->property("mouseX").toInt();
+           mouseY = oMouseArea->property("mouseY").toInt();
+               qDebug() << "Mouse move slot coords:" << mouseX << "," << mouseY;
+       }
+
 
 public:
 
@@ -40,7 +52,8 @@ trackerImageProvider* ptrackerView;
 private :
     QObject* txtLog;
     QObject* imgScene;
-
+    QObject* oMouseArea; //Video frame Mouse Are
+    int mouseX,mouseY; //mouse Position within The TrackerImage Area
 };
 
 #endif // MAINWINDOW_H
