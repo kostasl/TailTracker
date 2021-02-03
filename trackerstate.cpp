@@ -28,6 +28,60 @@ uint trackerState::getTotalFrames()
     return(totalVideoFrames);
 }
 
+
+uint trackerState::getCurrentFrameNumber()
+{
+    return(currentFrame);
+}
+
+void trackerState::setCurrentFrameNumber(uint nFrame)
+{
+
+    bStartFrameChanged = (nFrame !=currentFrame);
+    bPaused = true;
+    currentFrame = nFrame;
+}
+
+void trackerState::setStopFrame(uint nFrame)
+{
+    endFrame = nFrame;
+}
+
+uint trackerState::getStopFrame()
+{
+    return(endFrame);
+}
+
+
+bool trackerState::atFirstFrame()
+{
+    return(currentFrame == startFrame);
+}
+bool trackerState::atLastFrame()
+{
+    return(currentFrame == (totalVideoFrames-1));
+}
+bool trackerState::atStopFrame()
+{
+    return(currentFrame == endFrame);
+}
+
+void trackerState::processInputKey(int Key)
+{
+    userInputKey = Key;
+
+    switch (Key)
+    {
+     case 27:
+     case 'q':
+            bExiting = true;
+            break;
+
+    case 't':
+        bTracking = true;
+    }
+}
+
 /// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
 QFileInfo trackerState::getNextVideoFile()
 {

@@ -12,11 +12,13 @@ SOURCES += \
         main.cpp \
         mainwindow.cpp \
         src/handler.cpp \
+        trackerimageprovider.cpp \
         trackerstate.cpp
 
 HEADERS += \
     include/handler.h \
     mainwindow.h \
+    trackerimageprovider.h \
     trackerstate.h
 
 

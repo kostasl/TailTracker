@@ -28,7 +28,9 @@
 //#include <opencv2/video/background_segm.hpp>
 
 #include <trackerstate.h>
+#include <trackerimageprovider.h>
 #include <mainwindow.h>
+
 using namespace std;
 using namespace cv;
 
@@ -41,11 +43,14 @@ using namespace cv;
 //
 unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 {
+    cv::namedWindow("Trackerdisplay",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
+    cv::resizeWindow("Trackerdisplay",250,250);
+
 
     QElapsedTimer otLastUpdate; //Time Since Last Progress Report
     otLastUpdate.start();
 
-    cv::Mat frame;
+    cv::Mat frame,outframe;
     unsigned int nFrame         = 0;
     unsigned int nErrorFrames   = 0;
 
@@ -59,7 +64,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     }else
         window_main.LogEvent(QString("Processing video file") + videoFile.fileName() ,1);
 
-    cv::VideoCapture cvcapture(videoFile.path().toStdString());
+    cv::VideoCapture cvcapture(videoFile.filePath().toStdString());
     if(!cvcapture.isOpened())
     {
         //error in opening the video input
@@ -70,10 +75,127 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     }
 
     trackerState.setVidFps( cvcapture.get(CAP_PROP_FPS) );
-
     trackerState.setTotalFrames(cvcapture.get(CV_CAP_PROP_FRAME_COUNT));
-    window_main.LogEvent(QString("Total frames to track:") + QString(trackerState.getTotalFrames() ),5 );
+    trackerState.setStopFrame(cvcapture.get(CV_CAP_PROP_FRAME_COUNT));
+    window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.getTotalFrames() ),5 );
 
+    //  Check If it contains no Frames And Exit
+    if (trackerState.getTotalFrames() < 2)
+    {
+        window_main.LogEvent("[ERROR] This Video File is empty ",2);
+        cvcapture.release();
+        return 0;
+    }
+
+    //read input data. ESC or 'q' for quitting
+    while( !trackerState.bExiting && (char)trackerState.userInputKey != 27 )
+    {
+        /// Flow Control Code  - For When Looking at Specific Frame Region ///
+        // 1st Check If user changed Frame - and go to that frame
+        if (trackerState.bStartFrameChanged)
+        {
+            nFrame = trackerState.getCurrentFrameNumber();
+            cvcapture.set(CV_CAP_PROP_POS_FRAMES,nFrame);
+        }
+
+        if (!trackerState.bPaused  )
+        {
+            nFrame = cvcapture.get(CV_CAP_PROP_POS_FRAMES);
+           //window_main.tickProgress();
+        }
+
+        //if (trackerState.bPaused || trackerState.bStartFrameChanged)
+        //    continue;
+     //        trackerState.bStartFrameChanged = false; //Reset
+
+        ///READ FRAME - Check For Error
+         try //Try To Read The Image of that video Frame
+        {
+            //read the current frame
+            if(!cvcapture.read(frame))
+            {
+                if (trackerState.atFirstFrame())
+                {
+                    window_main.LogEvent("# [Error]  Unable to read first frame.",2);
+                    nFrame = 0; //Signals To caller that video could not be loaded.
+                    trackerState.setCurrentFrameNumber(0);
+                    //Delete the Track File //
+                    //removeDataFile(outdatafile);
+                    exit(EXIT_FAILURE);
+                }
+                else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
+                {
+                   window_main.LogEvent("# [Error]  Unable to read first frame.",2);
+                   if (!trackerState.atLastFrame() )
+                   {
+                       window_main.LogEvent("[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked",3);
+                       //removeDataFile(outdatafile); //Delete The Output File
+                   }
+                   else
+                   {
+                       window_main.LogEvent(" [info] processVideo loop done!",5);
+                       //::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
+                   }
+                   //continue;
+                   break;
+               }
+            } //Can't Read Next Frame
+
+        }catch(const std::exception &e)
+        {
+
+            window_main.LogEvent(QString(e.what()) + QString(" [Error]  reading frame. Skipping."),2);
+            if (!trackerState.atLastFrame())
+                cvcapture.set(CV_CAP_PROP_POS_FRAMES,nFrame+1);
+
+            trackerState.setCurrentFrameNumber(nFrame+1);
+            trackerState.errorFrames++;
+
+            if (trackerState.errorFrames > 20) //Avoid Getting Stuck Here
+            {
+                // Too Many Error / Fail On Tracking
+                 window_main.LogEvent(" [Error]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure",1);
+                //removeDataFile(outdatafile);
+                break;
+            }
+            else
+                continue;
+        }
+        //Update Frame Index
+        nFrame = cvcapture.get(CV_CAP_PROP_POS_FRAMES);
+        trackerState.setCurrentFrameNumber(nFrame);
+
+        //Check If StopFrame Reached And Pause
+        if (trackerState.atStopFrame() && !trackerState.bPaused)
+        {
+             trackerState.bPaused = true; //Stop Here
+             window_main.LogEvent(QString(">>Stop Frame Reached - Video Paused<<"),5);
+        }
+
+         //Pause on 1st Frame If Flag Start Paused is set
+         if (trackerState.bStartPaused && trackerState.atFirstFrame() && !trackerState.bPaused)
+         {
+             trackerState.bPaused = true; //Start Paused //Now Controlled By bstartPaused
+             window_main.LogEvent(QString("[info]>> Video Paused<<"),5);
+         }
+
+         /// Start Processing The Frame
+         //outframe = cv::Mat::zeros(frame.rows,frame.cols,frame.type());
+         outframe = frame.clone();
+
+         cv::imshow("Trackerdisplay",frame );
+         if (nFrame > 100)
+            window_main.showCVImage(frame, nFrame);
+
+         trackerState.processInputKey(cv::waitKey(1));
+
+
+
+         QCoreApplication::processEvents(QEventLoop::AllEvents);
+     }/// Main While - Reading Frames Loop
+
+
+    return (trackerState.getCurrentFrameNumber());
 }
 
 int main(int argc, char* argv[]){
@@ -90,6 +212,10 @@ int main(int argc, char* argv[]){
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
     engine.load(mainwindow_url);
+
+    trackerImageProvider* ptrackerView = new trackerImageProvider();
+
+    engine.addImageProvider(QLatin1String("trackerframe"),ptrackerView);
 
     mainwindow omeanWindow(engine);
 
@@ -147,8 +273,7 @@ int main(int argc, char* argv[]){
 
     processVideo(omeanWindow,oTrackerstate);
 
-    cv::namedWindow("Trackerdisplay",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-    cv::resizeWindow("Trackerdisplay",250,250);
+
 
 
 //    char c=' ';

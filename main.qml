@@ -38,7 +38,7 @@ Window {
         width: 250
         height: 250
         fillMode: Image.PreserveAspectFit
-        source: "qrc:/qtquickplugin/images/template_image.png"
+        source: "image://trackerframe/1"
     }
 
     MouseArea {

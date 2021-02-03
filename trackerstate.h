@@ -23,7 +23,7 @@
 #include <opencv2/features2d.hpp>
 #include <opencv2/video/background_segm.hpp>
 
-
+/// \brief Process user provided config params and set corresponding internal/global variables
 class trackerState
 {
 public:
@@ -32,12 +32,36 @@ public:
     void saveState(std::string strFilename);
     void loadState(std::string strFilename);
     void setVidFps(float fps);
+    uint getCurrentFrameNumber();
+    void setCurrentFrameNumber(uint nFrame);
+    uint getStopFrame();
+    void setStopFrame(uint nFrame);
     float getVidFps();
     void setTotalFrames(uint nFrames);
     uint getTotalFrames();
     QFileInfo getNextVideoFile();
-    /// \brief Process user provided config params and set corresponding internal/global variables
+    bool atFirstFrame();
+    bool atLastFrame();
+    bool atStopFrame();
+    void processInputKey(int Key);
 
+public:
+    bool bPaused     = true;
+    bool bStartPaused = true;
+    bool bROIChanged = true;
+    bool bshowMask   = false;
+    bool bTracking   = true; //Start By Tracking by default
+    bool bExiting    = false;
+    bool bStartFrameChanged = false;
+
+    // Video Processing Flags
+    bool bUseBGMOGModelling = true;
+    bool bRemovePixelNoise = false;
+    int g_Segthresh = 0;
+    int userInputKey = 0;
+    uint startFrame;
+    uint endFrame;
+    uint errorFrames = 0;
 
 private:
     QDir outdir;
@@ -47,22 +71,11 @@ private:
     QStringList invidFileList; // List of video file names To process
     std::ofstream foutLog;//Used for Logging To File
 
-    bool bPaused     = true;
-    bool bStartPaused = true;
-    bool bROIChanged = true;
-    bool bshowMask   = false;
-    bool bTracking   = true; //Start By Tracking by default
-    bool bExiting    = false;
-
-    // Video Processing Flags
-    bool bUseBGMOGModelling = true;
-    bool bRemovePixelNoise = false;
-    int g_Segthresh = 0;
-
    //
    float vidfps;
    uint totalVideoFrames;
-   uint currentFrame;
+   uint currentFrame; //The current frame number of tracking
+
 
     //Morphological Kernels
     cv::Mat kernelOpen;
