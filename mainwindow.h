@@ -12,6 +12,7 @@
 #include <QImage>
 #include <QQuickImageProvider>
 #include <QMouseEvent>
+#include <QKeyEvent>
 //#include <QtOpencvCore>
 
 #include <opencv2/highgui/highgui.hpp>
@@ -27,6 +28,7 @@ public:
     void LogEvent(QString txt,int AlertLevel);
     void showCVImage(cv::Mat& img,uint nFrame );
     Q_OBJECT
+
    public slots:
        void cppSlot(const QString &msg) {
            qDebug() << "Called the cpp C++ slot with message:" << msg;
@@ -48,6 +50,9 @@ public:
 cv::Mat frameScene; //CvMat Last Frame Drawn
 QImage qimg; //SCene Image Updated in showCVImage Image
 trackerImageProvider* ptrackerView;
+
+protected:
+    bool eventFilter(QObject *obj, QEvent *event);
 
 private :
     QObject* txtLog;

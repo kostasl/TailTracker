@@ -18,6 +18,9 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine)
      QObject::connect(oMouseArea  , SIGNAL(qmlMouseDragSig()),
                       this, SLOT(mouseDragSlot()));
 
+     this->installEventFilter(this); //To KeyPresses
+     oWindow->installEventFilter(this);
+
 
      // Fetch Point to Window Object
      txtLog = (oWindow->findChild<QObject*>("txtLog")); //QTextObject
@@ -54,5 +57,17 @@ void mainwindow::showCVImage(cv::Mat& img,uint nFrame )
     //if (ptDrag)
     //    cv::circle(frameScene,*ptDrag,5,cv::Scalar(200,200,0),2);
 
+
+}
+
+bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
+
+    //qDebug() << "Event:" << event->type();
+      if (event->type() == QEvent::KeyPress) {
+         QKeyEvent *keyEvent = static_cast<QKeyEvent*>(event);
+         QString strkey = keyEvent->text();
+         qDebug() << "KeyPress:" << strkey;
+
+      }
 
 }
