@@ -256,12 +256,37 @@ int trackerState::initInputVideoStream()
 /// \brief Initialize BG substractor objects, depending on options / can use cuda
 void trackerState::initBGSubstraction()
 {
+
     //Doesn't matter if cuda FLAG is enabled
-    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, 3,false);
+    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, 3,true);
 
     pBGsubmodel->setHistory(MOGhistory);
     pBGsubmodel->setNMixtures(MOGNMixtures);
     pBGsubmodel->setBackgroundRatio(MOGBGRatio);
+
+    cv::Mat frame,fgMask;
+
+
+    //Get BGImage
+    while (getCurrentFrameNumber() < MOGhistory)
+    {
+        frame = getNextFrame();
+
+        //LearningRate Negative parameter value makes the algorithm to use some automatically chosen learning rate
+        pBGsubmodel->apply(frame,fgMask,MOGLearningRate);
+
+        pBGsubmodel->getBackgroundImage(bgFrame);
+        cv::imshow("fg MAsk Learning",fgMask);
+        cv::imshow("BG Model Learning",bgFrame);
+
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
+    }
+
+    setCurrentFrameNumber(1); //Reset To First Frame
+    //Make Learning Nominal
+    MOGLearningRate = 0.0001;
+
+
 
 }
 

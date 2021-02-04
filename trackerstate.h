@@ -91,19 +91,24 @@ public:
 
     //Background model
     cv::Ptr<cv::BackgroundSubtractorMOG2> pBGsubmodel; //MOG2 Background subtractor
-    int MOGhistory = 200;
-    float MOGBGRatio = 1.0f;
-    int MOGNMixtures = 200;
-    double MOGLearningRate = 0.001;
+    int MOGhistory = 500;
+    float MOGBGRatio = 0.9f;
+    int MOGNMixtures = 3;
+    double MOGLearningRate = 0.01;//20.0/(MOGhistory);
+    cv::Mat bgFrame;
+
+    double contrastGain = 2.4;
+    double brightness  = 25;
 
     const int FitTailIntensityScanAngleDeg   = 35; //
     const int FishTailSpineSegmentCount      = 16;
     int FishTailSpineSegmentLength           = 10; //Length of Each Segment
-    double fishBearingRads                 = 0; //Larval Orientation
-    cv::Point ptTailRoot                   = cv::Point(80,30);
+    double fishBearingRads                 = 45.0*CV_PI/180.0; //Larval Orientation
+    cv::Point ptTailRoot                   = cv::Point(122,48);
     int FitTailConfigState                 = 0; //A state Machine  register
 
     t_fishspline tailsplinefit; ///X-Y Coordinates of Fitted spline to contour
+
 
 private:
     QDir outdir;

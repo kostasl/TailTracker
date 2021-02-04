@@ -54,6 +54,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.getTotalFrames() ),5 );
     trackerState.initBGSubstraction();
 
+
     //read input data. ESC or 'q' for quitting
     while(!trackerState.bExiting && !trackerState.atLastFrame())
     {
@@ -97,12 +98,12 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         //cv::imshow("Trackerdisplay",frame );
         /// IMAGE TRANSFORMS Experimental ///
         cv::Mat abs_dst,frame_blur,frame_denoise,frame_Ledge,frame_BCTrans;
-        double alpha = 2.4; /*< Simple contrast control */
-        int beta = 25;       /*< Simple brightness control */
+        double alpha = trackerState.contrastGain; /*< Simple contrast control */
+        int beta = trackerState.brightness;       /*< Simple brightness control */
 
         // Change Brightness Contrast
         frame.convertTo(frame_BCTrans, -1, alpha, beta);
-        frame= frame_BCTrans;
+        frame = frame_BCTrans;
 
         //Copy Frame
         outframe = frame.clone();
@@ -114,7 +115,8 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         GaussianBlur( frame, frame_blur, Size(3, 3), 0, 0, BORDER_DEFAULT );
         cvtColor( frame_blur, frame_blur, COLOR_BGR2GRAY ); // Convert the image to grayscale
 
-        cv::fastNlMeansDenoising(frame_blur, frame_denoise,3.0,7, 21);
+        //cv::fastNlMeansDenoising(frame_blur, frame_denoise,3.0,7, 21);
+        frame_denoise = frame_blur;
 
 //        int kernel_size = 3;
 //        int scale = 1;
@@ -127,21 +129,25 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
         cv::imshow( "Gaussian Blur", frame_blur );
         cv::imshow("Brightness Contrast", frame_BCTrans);
-        cv::imshow("Denoised And Blured And B&C Increased", frame_denoise);
+
         ////////// END OF LAPLACE EDGE ///
 
         //BG
-        cv::Mat fgFrame;
-        //fgFrame = cv::Mat(frame.size(), CV_16SC1);
-        if (nFrame > 10)
-            //cv::absdiff(frame, lastframe, fgFrame);
-             cv::compare(frame_denoise, lastframe, fgFrame, cv::CMP_NE);
-        //fgFrame = frame - lastframe;
-        //trackerState.pBGsubmodel->apply(frame_denoise,fgFrame,trackerState.MOGLearningRate);
+        cv::Mat fgMask,fgFrame,bgFrame;
+        cv::Mat frame_diff  = cv::Mat(frame_denoise.size(), CV_16SC1);
+        //bgFrame = cv::Mat(frame_denoise.size(), frame_denoise.type());
+        //trackerState.pBGsubmodel->getBackgroundImage(bgFrame);
+        trackerState.bgFrame.copyTo(bgFrame);
+        cv::imshow("BG Image",bgFrame);
 
-        if (!fgFrame.empty())
-            cv::imshow("Diff FG",fgFrame);
+        cv::imshow("Denoised And Blured And B&C Increased", frame_denoise);
+        cvtColor( bgFrame,  bgFrame, COLOR_BGR2GRAY ); // Convert the image to grayscale
+        //cvtColor( frame_denoise, frame_denoise, CV_8UC1 ); // Convert the image to grayscale
 
+        cv::absdiff(frame_denoise, bgFrame,frame_diff );
+        frame_diff.copyTo(frame_denoise);
+
+        cv::imshow("Substracted Denoised And Blured And B&C Increased", frame_denoise);
 
         //trackerState.pBGsubmodel->getBackgroundImage(bgFrame);
         /// Handle TAIL Spine Initialization and Fitting
@@ -178,7 +184,6 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
             trackerState.initSpine();
             trackerState.FitTailConfigState = 0;
         }
-
 
 
 

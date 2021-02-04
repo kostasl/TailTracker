@@ -42,7 +42,7 @@ public:
            mouseX = oMouseArea->property("mouseX").toInt();
            mouseY = oMouseArea->property("mouseY").toInt();
 
-           qDebug() << "Mouse Click slot coords:" << mouseX << "," << mouseY;
+           //qDebug() << "Mouse Click slot coords:" << mouseX << "," << mouseY;
            //Click Triggered on Button Release
            // 1st Set Top Of Tail On Point and Display Arrow
            // 2nd point Arrow for tail direction
@@ -60,7 +60,7 @@ public:
        void mouseDragSlot() {
            mouseX = oMouseArea->property("mouseX").toInt();
            mouseY = oMouseArea->property("mouseY").toInt();
-               qDebug() << "Mouse move slot coords:" << mouseX << "," << mouseY;
+               //qDebug() << "Mouse move slot coords:" << mouseX << "," << mouseY;
 
                //Continue to Set 2nd Point While Mouse Dragging
                if (ptrackerState->FitTailConfigState == 1)
@@ -75,7 +75,7 @@ public:
        {
            mouseX = oMouseArea->property("mouseX").toInt();
            mouseY = oMouseArea->property("mouseY").toInt();
-            qDebug() << "Mouse Released slot coords:" << mouseX << "," << mouseY;
+            //qDebug() << "Mouse Released slot coords:" << mouseX << "," << mouseY;
            //User Released Button - Reset Config State
             if (ptrackerState->FitTailConfigState == 1)
             {

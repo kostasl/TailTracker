@@ -55,6 +55,10 @@ void mainwindow::showCVImage(cv::Mat& img,uint nFrame )
     ptrackerView->setNextFrame(img);
     imgScene->setProperty("source",QVariant(QString("image://")+ QLatin1String("trackerframe") + QString("/") + QString::number(nFrame) ) );
 
+    //Avoid Caching
+    if (ptrackerState->bPaused)
+        imgScene->setProperty("source",QVariant(QString("image://")+ QLatin1String("trackerframe") + QString("/") + QString::number(nFrame+ random()*100)  ) );
+
     /// Draw Overlay Info From This Window //
     //if (ptDrag)
     //    cv::circle(frameScene,*ptDrag,5,cv::Scalar(200,200,0),2);
