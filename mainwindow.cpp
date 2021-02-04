@@ -1,6 +1,6 @@
 #include "mainwindow.h"
 
-mainwindow::mainwindow(QQmlApplicationEngine& engine)
+mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
 {
       // Get Form Object Pointers And Connect Signaling slots
       QObject* oWindow = engine.rootObjects().first();
@@ -12,8 +12,8 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine)
      QObject::connect(oMouseArea   , SIGNAL(qmlMouseClickSig()),
                       this, SLOT(mouseClickSlot()));
 
-     QObject::connect(oMouseArea  , SIGNAL(clicked(QMouseEvent)),
-                      this, SLOT(OnClickSlot(QMouseEvent)));
+     QObject::connect(oMouseArea  , SIGNAL(qmlMouseReleased()),
+                      this, SLOT(OnClickReleasedSlot()));
 
      QObject::connect(oMouseArea  , SIGNAL(qmlMouseDragSig()),
                       this, SLOT(mouseDragSlot()));
@@ -27,6 +27,8 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine)
      imgScene = (oWindow->findChild<QObject*>("imgTracker")); //Image Item /Connected to custom ImageProvider
      //Pointer to The QImage Type - where we draw the tracker images
      ptrackerView = (trackerImageProvider*)engine.imageProvider("trackerframe");
+
+     ptrackerState = trackerstate; //Save pointer to Tracker State Object
 }
 
 void mainwindow::LogEvent(QString msg,int AlertLevel)
@@ -68,6 +70,14 @@ bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
          QString strkey = keyEvent->text();
          qDebug() << "KeyPress:" << strkey;
 
+         ptrackerState->processInputKey(keyEvent->key());
+
       }
 
+}
+
+
+mainwindow::~mainwindow()
+{
+    //delete ptrackerState;
 }

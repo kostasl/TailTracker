@@ -39,8 +39,8 @@ Window {
         objectName: "imgTracker"
         x: 195
         y: 38
-        width: 250
-        height: 250
+        width: 200
+        height: 200
         fillMode: Image.PreserveAspectFit
         source: "image://trackerframe/1"
         onStatusChanged: {
@@ -50,6 +50,8 @@ Window {
               }
 
         MouseArea {
+                  width: 200
+                  height: 200
                   objectName: "imgMouseArea"
                   anchors.fill: parent
                   acceptedButtons: Qt.LeftButton | Qt.RightButton
@@ -57,18 +59,33 @@ Window {
                   anchors.bottomMargin: 0
                   anchors.leftMargin: 0
                   anchors.topMargin: 0
+                  hoverEnabled : true
                   signal qmlMouseClickSig()
                   signal qmlMouseDragSig()
+                  signal qmlMouseReleased()
+                  signal qmlMouseMoved()
                   onClicked: {
                       //indicator.running = true;
                       //console.log("irregular area clicked");
-                      qmlMouseClickSig();
+                      //qmlMouseClickSig();
                       //videoImage.source = "image://trackerframe/" + Math.random(1000)
+
                   }
-                  onDoubleClicked: qmlMouseClickSig()
+                  //onDoubleClicked: qmlMouseClickSig()
+                  onPressAndHold:{
+                      cursorShape = Qt.CrossCursor;
+                      qmlMouseClickSig();
+                      hoverEnabled = true;
+                  }
                   onPositionChanged: {
                       //Draging Motion
                       qmlMouseDragSig();
+                  }
+                  onReleased:{
+                      //Draging Motion
+                      qmlMouseReleased();
+                      //hoverEnabled = false;
+                      cursorShape = Qt.ArrowCursor;
                   }
 
         }

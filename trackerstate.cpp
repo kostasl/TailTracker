@@ -4,6 +4,16 @@ using namespace std;
 
 trackerState::trackerState()
 {
+    initSpine();
+
+}
+trackerState::~trackerState()
+{
+    delete pcvcapture;
+    kernelOpen.release();
+    kernelDilateMOGMask.release();
+    kernelOpenfish.release();
+    kernelClose.release();
 
 }
 
@@ -31,17 +41,98 @@ uint trackerState::getTotalFrames()
 
 uint trackerState::getCurrentFrameNumber()
 {
-    return(currentFrame);
+    //if (!bStartFrameChanged)
+    currentFrameNumber = pcvcapture->get(CV_CAP_PROP_POS_FRAMES);
+
+    return(currentFrameNumber);
 }
 
 void trackerState::setCurrentFrameNumber(uint nFrame)
 {
 
-    bStartFrameChanged = (nFrame !=currentFrame);
+    bStartFrameChanged = (nFrame !=currentFrameNumber);
     bPaused = true;
-    currentFrame = nFrame;
+
+    pcvcapture->set(CV_CAP_PROP_POS_FRAMES,nFrame);
+    currentFrameNumber = nFrame;
 }
 
+/// \brief Return the next image from the source video
+cv::Mat  trackerState::getNextFrame()
+{
+    cv::Mat nextFrame;
+
+    //Return Last Captured Frame
+    if (bPaused && !nextFrame.empty())
+        return (nextFrame);
+
+    ///READ FRAME - Check For Error
+     try //Try To Read The Image of that video Frame
+    {
+        //read the current frame
+        if(!pcvcapture->read(nextFrame))
+        {
+            if (atFirstFrame())
+            {
+                //window_main.LogEvent("# [Error]  Unable to read first frame.",2);
+                lastError.first = "[ERROR]  Unable to read first frame.";
+                lastError.second = 2;
+                currentFrameNumber = 0; //Signals To caller that video could not be loaded.
+
+                setCurrentFrameNumber(currentFrameNumber+1); //Skip
+                //Delete the Track File //
+                //removeDataFile(outdatafile);
+                //exit(EXIT_FAILURE);
+            }
+            else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
+            {
+                lastError.first = "[Error]  Unable to read first frame.";
+                lastError.second = 2;
+               if (!atLastFrame())
+               {
+                   //window_main.LogEvent("[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked",3);
+                   //removeDataFile(outdatafile); //Delete The Output File
+                   lastError.first = "[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked";
+                   lastError.second = 3;
+               }
+               else { ///Reached last Frame Video Done
+                   //window_main.LogEvent(" [info] processVideo loop done!",5);
+                   lastError.first = "[INFO] processVideo loop done!";
+                   lastError.second = 5;
+                   //::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
+               }
+               //continue;
+           }
+        }else /// ERROR Reading Frame - Can't Read Next Frame
+            currentFrameNumber++;
+    }catch(const std::exception &e)
+    {
+
+        //window_main.LogEvent(QString(e.what()) + QString(" [Error]  reading frame. Skipping."),2);
+        lastError.first = QString(e.what()) + QString(" [Error]  reading frame. Skipping.");
+        lastError.second = 2;
+
+        if (!atLastFrame())
+            setCurrentFrameNumber(currentFrameNumber++);
+            //pcvcapture->set(CV_CAP_PROP_POS_FRAMES,currentFrame+1);
+        errorFrames++;
+
+        if (errorFrames > 20) //Avoid Getting Stuck Here
+        {
+            // Too Many Error / Fail On Tracking
+            lastError.first = "[ERROR]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure";
+            lastError.second = 5;
+             //window_main.LogEvent("[ERROR]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure",1);
+            //removeDataFile(outdatafile);
+        }
+    }
+
+    /// Done Retrieving next Frame /Save if not empty Good
+    if (!nextFrame.empty())
+        nextFrame.copyTo(currentFrame);
+
+    return(nextFrame);
+}
 void trackerState::setStopFrame(uint nFrame)
 {
     endFrame = nFrame;
@@ -55,32 +146,126 @@ uint trackerState::getStopFrame()
 
 bool trackerState::atFirstFrame()
 {
-    return(currentFrame == startFrame);
+    return(currentFrameNumber == startFrame);
 }
 bool trackerState::atLastFrame()
 {
-    return(currentFrame == (totalVideoFrames-1));
+    return(currentFrameNumber == (totalVideoFrames-1));
 }
 bool trackerState::atStopFrame()
 {
-    return(currentFrame == endFrame);
+    return(currentFrameNumber == endFrame);
 }
 
-void trackerState::processInputKey(int Key)
+void trackerState::processInputKey(char Key)
 {
-    userInputKey = Key;
+    userInputKey = (int)Key;
 
     switch (Key)
     {
      case 27:
+     case 'Q':
      case 'q':
             bExiting = true;
+            bTracking = false;
+            bPaused = true;
             break;
 
+    case 'T':
     case 't':
         bTracking = true;
+        break;
+
+    case 'P':
+    case 'p':
+        bPaused= true;
+        std::clog << "[INFO] Paused " << std::endl;
+        break;
+
+    case 'R':
+    case 'r':
+        bPaused = false;
+
     }
 }
+
+//Return Last Recorded error and Remove error
+t_tracker_error trackerState::getLastError()
+{
+  t_tracker_error tmp_lastError = lastError;
+  lastError.first = "OK";
+  lastError.second = 10; //Lowest Priority
+  return(tmp_lastError);
+}
+
+/// \brief Initialize BG substractor objects, depending on options / can use cuda
+int trackerState::initInputVideoStream()
+{
+    QFileInfo videoFile = getNextVideoFile();
+    int ret = 0;
+    if (!videoFile .exists())
+    {
+        lastError.first = "[ERROR] Failed to find video file";
+        lastError.second = 1;
+        return 0;
+    }else
+    {
+        lastError.first = QString("Processing video file") + videoFile.fileName();
+        lastError.second = 9;
+    }
+
+    if (videoFile.suffix() == "avi" || videoFile.suffix() == "mp4" || videoFile.suffix() == "mkv")
+    {
+        std::clog << "Attempting to open video file " << videoFile.fileName().toStdString() << std::endl;
+
+        pcvcapture = new cv::VideoCapture(videoFile.filePath().toStdString());
+        if(!pcvcapture->isOpened())
+        {
+            //error in opening the video input
+            lastError.first = "[ERROR] Failed to open video capture device";
+            lastError.second = 1;
+            ret = 0;
+        }else{
+            lastError.first = "[INFO] video capture device opened succesfully";
+            lastError.second = 10;
+            ret = 1;
+        }
+
+        setVidFps(pcvcapture->get(CV_CAP_PROP_FPS) );
+        setTotalFrames(pcvcapture->get(CV_CAP_PROP_FRAME_COUNT));
+        setStopFrame(pcvcapture->get(CV_CAP_PROP_FRAME_COUNT));
+
+      }//If File is a video
+
+    //  Check If it contains no Frames And Exit
+    if (getTotalFrames() < 2)
+    {
+        lastError.first = "[ERROR] This Video File is empty ";
+        lastError.second = 2;
+        ret = 0;
+        pcvcapture->release();
+    }
+
+    // Video  Paused upon opening
+    if (bStartPaused)
+        bPaused = true;
+
+    return ret;
+}//End of Function
+
+/// \brief Initialize BG substractor objects, depending on options / can use cuda
+void trackerState::initBGSubstraction()
+{
+    //Doesn't matter if cuda FLAG is enabled
+    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, 5,false);
+
+    pBGsubmodel->setHistory(MOGhistory);
+    pBGsubmodel->setNMixtures(MOGNMixtures);
+    pBGsubmodel->setBackgroundRatio(MOGBGRatio);
+
+}
+
+
 
 /// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
 QFileInfo trackerState::getNextVideoFile()
@@ -101,7 +286,7 @@ QFileInfo trackerState::getNextVideoFile()
 }
 
 /// \brief Process user provided config params and set corresponding internal/global variables
-trackerState::trackerState(cv::CommandLineParser& parser)
+trackerState::trackerState(cv::CommandLineParser& parser):trackerState()
 {
 
     QString stroutFilename;
@@ -226,3 +411,57 @@ trackerState::trackerState(cv::CommandLineParser& parser)
 
 }
 /// END OF INIT GLOBAL PARAMS //
+
+void trackerState::initSpine()
+{
+    //Reset Legth
+    int c_spineSegL =  FishTailSpineSegmentLength;
+
+    tailsplinefit.clear();
+    tailsplinefit.reserve(FishTailSpineSegmentCount);
+
+    for (int i=0;i<FishTailSpineSegmentCount;i++)
+    {
+
+        splineKnotf sp;
+        //1st Spine Is in Opposite Direction of Movement and We align 0 degrees to be upwards (vertical axis)
+        //if (this->bearingRads > CV_PI)
+        if (fishBearingRads < 0)
+            fishBearingRads  += 2.0*CV_PI;
+
+            sp.angleRad    = (fishBearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
+            sp.spineSegLength = c_spineSegL;    //Default Size
+            if (sp.angleRad < 0)
+                sp.angleRad += 2.0*CV_PI;
+        //else
+//            sp.angleRad    = (this->bearingRads)+CV_PI/2.0; //CV_PI/2 //Spine Looks In Opposite Direcyion
+
+        assert(!std::isnan(sp.angleRad && std::abs(sp.angleRad) <= 2*CV_PI && (sp.angleRad) >= 0 ));
+
+        if (i==0)
+        {
+            sp.x =  ptTailRoot.x;
+            sp.y =  ptTailRoot.y;
+        }
+        else
+        {
+            //0 Degrees Is vertical Axis Looking Up
+            sp.x        = tailsplinefit[i-1].x + ((double)c_spineSegL)*sin(sp.angleRad);
+            sp.y        = tailsplinefit[i-1].y - ((double)c_spineSegL)*cos(sp.angleRad);
+        }
+
+        tailsplinefit.push_back(sp); //Add Knot to spline
+    }
+
+
+
+//    //    ///DEBUG
+//        for (int j=0; j<c_spinePoints;j++) //Rectangle Eye
+//        {
+//            cv::circle(frameDebugC,cv::Point(spline[j].x,spline[j].y),2,TRACKER_COLOURMAP[j],1);
+//        }
+
+       // drawSpine(frameDebugC);
+       // cv::waitKey(300);
+
+}

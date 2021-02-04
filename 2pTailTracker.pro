@@ -11,12 +11,12 @@ PKGCONFIG += opencv gsl #or whatever package here
 SOURCES += \
         main.cpp \
         mainwindow.cpp \
-        src/handler.cpp \
+        handler.cpp \
         trackerimageprovider.cpp \
         trackerstate.cpp
 
 HEADERS += \
-    include/handler.h \
+    handler.h \
     mainwindow.h \
     trackerimageprovider.h \
     trackerstate.h
