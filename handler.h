@@ -29,6 +29,11 @@ class mouse_GetVector_param {
 	bool status;
 };
 
+
+
+typedef cv::KeyPoint zftblob;
+typedef std::vector<zftblob> zftblobs;
+
 class mainwindow;
 class trackerState;
 
@@ -39,4 +44,5 @@ void get_interp3(Mat &src, Point2i start, Point2d tgt,double, vector<Point2i>& a
 unsigned int processVideo(mainwindow& window_main, trackerState& trackerState);
 t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerState,t_fishspline spline);
 void drawSpine(cv::Mat& outFrame,trackerState& trackerState,t_fishspline& spline);
-float angleBetween(const cv::Point &v1, const cv::Point &v2);
+float angleBetween(const cv::Point2f &v1, const cv::Point2f &v2);
+int trackTailOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,t_fishspline spline,unsigned int nFrame,t_fishspline& spline_next );

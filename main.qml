@@ -42,7 +42,7 @@ Window {
         width: 200
         height: 200
         fillMode: Image.PreserveAspectFit
-        source: "image://trackerframe/1"
+        source: "image://trackerframe/0"
         onStatusChanged: {
                //   if(status == Image.Ready)
                       //indicator.running = false;

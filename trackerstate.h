@@ -92,12 +92,12 @@ public:
     //Background model
     cv::Ptr<cv::BackgroundSubtractorMOG2> pBGsubmodel; //MOG2 Background subtractor
     int MOGhistory = 200;
-    float MOGBGRatio = 5.0f;
+    float MOGBGRatio = 1.0f;
     int MOGNMixtures = 200;
-    double MOGLearningRate = 0.00001;
+    double MOGLearningRate = 0.001;
 
-    const int FitTailIntensityScanAngleDeg   = 60; //
-    const int FishTailSpineSegmentCount      = 12;
+    const int FitTailIntensityScanAngleDeg   = 35; //
+    const int FishTailSpineSegmentCount      = 16;
     int FishTailSpineSegmentLength           = 10; //Length of Each Segment
     double fishBearingRads                 = 0; //Larval Orientation
     cv::Point ptTailRoot                   = cv::Point(80,30);

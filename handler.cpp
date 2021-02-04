@@ -9,7 +9,7 @@
 using namespace std;
 using namespace cv;
 
-float angleBetween(const cv::Point &v1, const cv::Point &v2)
+float angleBetween(const cv::Point2f &v1, const cv::Point2f &v2)
 {
     float len1 = sqrt(v1.x * v1.x + v1.y * v1.y);
     float len2 = sqrt(v2.x * v2.x + v2.y * v2.y);
@@ -39,7 +39,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     QElapsedTimer otLastUpdate; //Time Since Last Progress Report
     otLastUpdate.start();
 
-    cv::Mat frame,outframe;
+    cv::Mat frame,outframe,lastframe;
     unsigned int nFrame         = 0;
     unsigned int nErrorFrames   = 0;
 
@@ -93,27 +93,64 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
          }
 
          /// Start Processing The Frame
-         outframe = frame.clone();
-        //Process And Track  Tail
-         cv::putText(outframe, cv::String(QString::number(nFrame).toStdString()), cv::Point(140, 20),
-                 cv::FONT_HERSHEY_SIMPLEX, 0.6 , cv::Scalar(250,250,0));
 
         //cv::imshow("Trackerdisplay",frame );
+        /// IMAGE TRANSFORMS Experimental ///
+        cv::Mat abs_dst,frame_blur,frame_denoise,frame_Ledge,frame_BCTrans;
+        double alpha = 2.4; /*< Simple contrast control */
+        int beta = 25;       /*< Simple brightness control */
+
+        // Change Brightness Contrast
+        frame.convertTo(frame_BCTrans, -1, alpha, beta);
+        frame= frame_BCTrans;
+
+        //Copy Frame
+        outframe = frame.clone();
+       //Process And Track  Tail
+        cv::putText(outframe, cv::String(QString::number(nFrame).toStdString()), cv::Point(140, 20),
+                cv::FONT_HERSHEY_SIMPLEX, 0.6 , cv::Scalar(250,250,0));
+
+        // Reduce noise by blurring with a Gaussian filter ( kernel size = 3 )
+        GaussianBlur( frame, frame_blur, Size(3, 3), 0, 0, BORDER_DEFAULT );
+        cvtColor( frame_blur, frame_blur, COLOR_BGR2GRAY ); // Convert the image to grayscale
+
+        cv::fastNlMeansDenoising(frame_blur, frame_denoise,3.0,7, 21);
+
+//        int kernel_size = 3;
+//        int scale = 1;
+//        int delta = 0;
+//        int ddepth = CV_16S;
+        //Laplacian( frame_blur, frame_Ledge, ddepth, kernel_size, scale, delta, BORDER_DEFAULT );
+        // converting back to CV_8U
+        //cv::convertScaleAbs( frame_Ledge, abs_dst );
+        //cv::imshow( "Laplace Edge", abs_dst );
+
+        cv::imshow( "Gaussian Blur", frame_blur );
+        cv::imshow("Brightness Contrast", frame_BCTrans);
+        cv::imshow("Denoised And Blured And B&C Increased", frame_denoise);
+        ////////// END OF LAPLACE EDGE ///
+
+        //BG
         cv::Mat fgFrame;
-        trackerState.pBGsubmodel->apply(frame,fgFrame,trackerState.MOGLearningRate);
+        //fgFrame = cv::Mat(frame.size(), CV_16SC1);
+        if (nFrame > 10)
+            //cv::absdiff(frame, lastframe, fgFrame);
+             cv::compare(frame_denoise, lastframe, fgFrame, cv::CMP_NE);
+        //fgFrame = frame - lastframe;
+        //trackerState.pBGsubmodel->apply(frame_denoise,fgFrame,trackerState.MOGLearningRate);
 
         if (!fgFrame.empty())
-            cv::imshow("FG",fgFrame);
+            cv::imshow("Diff FG",fgFrame);
 
-        if (frame.empty())
-            continue;
 
         //trackerState.pBGsubmodel->getBackgroundImage(bgFrame);
-
+        /// Handle TAIL Spine Initialization and Fitting
         /// Main Method Uses Pixel Intensity //
+        /// Secondary Method Uses Optic Flow
         if (trackerState.FitTailConfigState == 0)
         {
-            trackerState.tailsplinefit = fitSpineToIntensity(frame,trackerState,trackerState.tailsplinefit);
+            trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
+            trackerState.tailsplinefit = fitSpineToIntensity(frame_denoise,trackerState,trackerState.tailsplinefit);
             drawSpine(outframe,trackerState,trackerState.tailsplinefit );
         }
 
@@ -131,12 +168,13 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
                    2,CV_RGB(220,180,120),2);
 
 
-        // Done Setting Spine Direction
+        // Done Setting Spine Direction - Set Length And Bearing From User Input
         if (trackerState.FitTailConfigState == 2)
         {
-            trackerState.fishBearingRads = angleBetween(trackerState.ptTailRoot,
-                                           cv::Point(trackerState.tailsplinefit[1].x,trackerState.tailsplinefit[1].y) );
+            trackerState.fishBearingRads = angleBetween(cv::Point(trackerState.tailsplinefit[1].x,trackerState.tailsplinefit[1].y),
+                                                    trackerState.ptTailRoot);
 
+            trackerState.FishTailSpineSegmentLength = cv::norm(trackerState.ptTailRoot - cv::Point(trackerState.tailsplinefit[1].x,trackerState.tailsplinefit[1].y))/trackerState.FishTailSpineSegmentCount;
             trackerState.initSpine();
             trackerState.FitTailConfigState = 0;
         }
@@ -144,11 +182,10 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
 
 
-
         // Display video Image on GUI
         window_main.showCVImage(outframe, nFrame);
 
-
+        lastframe = frame_denoise; //Save
 
          QCoreApplication::processEvents(QEventLoop::AllEvents);
      }/// Main While - Reading Frames Loop
@@ -183,7 +220,7 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
 
     const size_t AP_N= trackerState.FishTailSpineSegmentCount;
     const int step_size = trackerState.FishTailSpineSegmentLength;
-
+    const int c_gain = 100;
     //const int c_tailscanAngle = gFitTailIntensityScanAngleDeg;
     uint pxValMax;
     int angle; //In Deg of Where The spline point is looking towards - Used by Ellipse Arc Drawing
@@ -201,7 +238,7 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
         angle = spline[k-1].angleRad/CV_PI*180.0-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y),
-                cv::Size(step_size,step_size), 0, angle-trackerState.FitTailIntensityScanAngleDeg, angle+trackerState.FitTailIntensityScanAngleDeg, 2, ellipse_pts);
+                cv::Size(step_size,step_size), 0, angle-trackerState.FitTailIntensityScanAngleDeg, angle+trackerState.FitTailIntensityScanAngleDeg, 1, ellipse_pts);
 
         if (ellipse_pts.size() ==0)
         {
@@ -210,6 +247,7 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
         }
         ///Calculate Moment of inertia Sum m theta along arc
         pxValMax                = 0;
+        int iMaxIdx            = 0; //Posiotn of Max Intensity Value
         uint iTailArcMoment     = 0;
         uint iPxIntensity       = 0;
         uint iSumPxIntensity    = 1;
@@ -218,21 +256,27 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
             //Obtain Value From Image at Point on Arc - Boundit in case it goes outside image
             int x = std::min(frameimg_Blur.cols,std::max(1,ellipse_pts[idx].x));
             int y = std::min(frameimg_Blur.rows,std::max(1,ellipse_pts[idx].y));
-            iPxIntensity = frameimg_Blur.at<uchar>(cv::Point(x,y));
+            iPxIntensity = c_gain*frameimg_Blur.at<uchar>(cv::Point(x,y));
 
             //Use idx As Angle /Position
             iTailArcMoment  += idx*iPxIntensity;
             iSumPxIntensity += iPxIntensity;
+            if (pxValMax < iPxIntensity)
+            {
+                pxValMax = iPxIntensity;
+                iMaxIdx = idx;
+            }
         } //Loop Through Arc Sample Points
 
         //Update Spline to COM (Centre Of Mass) And Set As New Spline Point
         uint comIdx = iTailArcMoment/iSumPxIntensity;
-        spline[k].x     = ellipse_pts[comIdx].x;
-        spline[k].y     = ellipse_pts[comIdx].y;
+        spline[k].x     = ellipse_pts[iMaxIdx].x;
+        spline[k].y     = ellipse_pts[iMaxIdx].y;
         /// Get Arc tan and Translate back to 0 being the Vertical Axis
         if (k==1) //1st point Always points in the opposite direction of the body
-            spline[k-1].angleRad    = (trackerState.fishBearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
+            spline[k-1].angleRad    = (trackerState.fishBearingRads)-CV_PI;// ; //  //Spine Looks In Opposite Direction
         else
+            //angleBetween(cv::Point(spline[k].y,spline[k].x),cv::Point(spline[k-1].y,spline[k-1].x))+CV_PI/2.0;
             spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
 
         //Set Next point Angle To follow this one - Otherwise Large deviation Spline
@@ -248,6 +292,63 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
 
     return(spline);
 } //fitSpineToIntensity
+
+
+
+/// Process Optic Flow of defined food model positions
+/// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
+
+
+int trackTailOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,t_fishspline spline,unsigned int nFrame,t_fishspline& spline_next )
+{
+    int retCount = 0;
+   std::vector<cv::Point2f> vptSpine_current;
+   std::vector<cv::Point2f> vptSpine_next;
+
+   zftblobs vSpineKeypoints_current;
+   zftblobs vSpineKeypoints_ret;
+
+   std::vector<uchar> voutStatus;
+   // L1 distance between patches around the original and a moved point, divided by number of pixels in a window, is used as a error measure.
+   std::vector<float>    voutError;
+
+   t_fishspline::iterator ft;
+
+   splineKnotf pSpinePoint;
+    //Fill POint Vector From Spine point vector
+   for ( ft  = spline.begin(); ft!=spline.end(); ++ft)
+   {
+       pSpinePoint = (splineKnotf)(*ft);
+
+       cv::KeyPoint kptSpine(cv::Point2f(pSpinePoint.x,pSpinePoint.y),2,pSpinePoint.angleRad);
+       vSpineKeypoints_current.push_back(kptSpine  );
+   }
+
+    cv::KeyPoint::convert(vSpineKeypoints_current,vptSpine_current);
+
+    //Calc Optic Flow for each food item
+    if (vptSpine_current.size() > 0 && !frame_grey_prev.empty())
+        cv::calcOpticalFlowPyrLK(frame_grey_prev,frame_grey,vptSpine_current,vptSpine_next,voutStatus,voutError,cv::Size(31,31),2);
+
+    cv::KeyPoint::convert(vptSpine_next,vSpineKeypoints_ret);
+
+    //Copy Over and Update Spine Positions - Based on Optic Flow
+    spline_next = spline;
+    //update spine Locations
+      //Loop through new Key points
+    for (int i=0;i<(int)vSpineKeypoints_ret.size();i++)
+    {
+        //Status numbers which has a value of 1 if next point is found,
+        if (!voutStatus.at(i))
+            continue; //ignore bad point
+        cv::Point2f ptSpinePos_updated = vptSpine_next.at(i);
+        spline_next[i].x = ptSpinePos_updated.x; //Update Spine Position X
+        spline_next[i].y = ptSpinePos_updated.y; //Update Spine Position Y
+
+    } //Check if Error
+//
+return retCount;
+}
 
 
 

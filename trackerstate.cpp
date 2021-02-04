@@ -63,8 +63,8 @@ cv::Mat  trackerState::getNextFrame()
     cv::Mat nextFrame;
 
     //Return Last Captured Frame
-    if (bPaused && !nextFrame.empty())
-        return (nextFrame);
+    if (bPaused && !atFirstFrame() )
+        return (currentFrame); //Stick to the current Frame
 
     ///READ FRAME - Check For Error
      try //Try To Read The Image of that video Frame
@@ -178,7 +178,7 @@ void trackerState::processInputKey(char Key)
 
     case 'P':
     case 'p':
-        bPaused= true;
+        bPaused = true;
         std::clog << "[INFO] Paused " << std::endl;
         break;
 
@@ -257,7 +257,7 @@ int trackerState::initInputVideoStream()
 void trackerState::initBGSubstraction()
 {
     //Doesn't matter if cuda FLAG is enabled
-    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, 5,false);
+    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, 3,false);
 
     pBGsubmodel->setHistory(MOGhistory);
     pBGsubmodel->setNMixtures(MOGNMixtures);
@@ -429,7 +429,7 @@ void trackerState::initSpine()
         if (fishBearingRads < 0)
             fishBearingRads  += 2.0*CV_PI;
 
-            sp.angleRad    = (fishBearingRads)-CV_PI ; //  //Spine Looks In Opposite Direction
+            sp.angleRad    = (fishBearingRads)-CV_PI; //   //Spine Looks In Opposite Direction
             sp.spineSegLength = c_spineSegL;    //Default Size
             if (sp.angleRad < 0)
                 sp.angleRad += 2.0*CV_PI;
