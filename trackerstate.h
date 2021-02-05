@@ -79,6 +79,7 @@ public:
     bool bTracking   = true; //Start By Tracking by default
     bool bExiting    = false;
     bool bStartFrameChanged = false;
+    bool bSkipExisting = false; //If An output file exists then do not retrack the video / Skip
 
     // Video Processing Flags
     bool bUseBGMOGModelling = true;
@@ -91,10 +92,16 @@ public:
 
     //Background model
     cv::Ptr<cv::BackgroundSubtractorMOG2> pBGsubmodel; //MOG2 Background subtractor
-    int MOGhistory = 500;
-    float MOGBGRatio = 0.9f;
-    int MOGNMixtures = 3;
-    double MOGLearningRate = 0.01;//20.0/(MOGhistory);
+    int MOGhistory = 1450;
+    ///The main threshold on the squared Mahalanobis distance to decide if the sample is well described by the background model or not.
+    /// //If a pixel is not close to any component, it is considered foreground or added as a new component. 3 sigma => Tg=3*3=9 is default.
+    double MOGVarThreshold = 3.0;
+    //If a foreground pixel keeps semi-constant value (?) for about backgroundRatio*history frames,
+    //it's considered background and added to the model as a center of a new component. It corresponds to TB parameter in the paper.
+    float MOGBGRatio = 0.01f;
+    int MOGNMixtures = 12;
+    double MOGLearningRate = 0.01; //0.0001
+    const double MOGNominamLearningRate = 0.0;
     cv::Mat bgFrame;
 
     double contrastGain = 2.4;

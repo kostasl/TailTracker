@@ -52,6 +52,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
 
     window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.getTotalFrames() ),5 );
+    window_main.LogEvent(QString("Calculating Background image"),10 );
     trackerState.initBGSubstraction();
 
 
@@ -95,15 +96,8 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
          /// Start Processing The Frame
 
-        //cv::imshow("Trackerdisplay",frame );
         /// IMAGE TRANSFORMS Experimental ///
         cv::Mat abs_dst,frame_blur,frame_denoise,frame_Ledge,frame_BCTrans;
-        double alpha = trackerState.contrastGain; /*< Simple contrast control */
-        int beta = trackerState.brightness;       /*< Simple brightness control */
-
-        // Change Brightness Contrast
-        frame.convertTo(frame_BCTrans, -1, alpha, beta);
-        frame = frame_BCTrans;
 
         //Copy Frame
         outframe = frame.clone();
@@ -118,36 +112,24 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         //cv::fastNlMeansDenoising(frame_blur, frame_denoise,3.0,7, 21);
         frame_denoise = frame_blur;
 
-//        int kernel_size = 3;
-//        int scale = 1;
-//        int delta = 0;
-//        int ddepth = CV_16S;
-        //Laplacian( frame_blur, frame_Ledge, ddepth, kernel_size, scale, delta, BORDER_DEFAULT );
-        // converting back to CV_8U
-        //cv::convertScaleAbs( frame_Ledge, abs_dst );
-        //cv::imshow( "Laplace Edge", abs_dst );
-
-        cv::imshow( "Gaussian Blur", frame_blur );
-        cv::imshow("Brightness Contrast", frame_BCTrans);
-
-        ////////// END OF LAPLACE EDGE ///
-
         //BG
         cv::Mat fgMask,fgFrame,bgFrame;
         cv::Mat frame_diff  = cv::Mat(frame_denoise.size(), CV_16SC1);
         //bgFrame = cv::Mat(frame_denoise.size(), frame_denoise.type());
         //trackerState.pBGsubmodel->getBackgroundImage(bgFrame);
         trackerState.bgFrame.copyTo(bgFrame);
-        cv::imshow("BG Image",bgFrame);
-
-        cv::imshow("Denoised And Blured And B&C Increased", frame_denoise);
         cvtColor( bgFrame,  bgFrame, COLOR_BGR2GRAY ); // Convert the image to grayscale
         //cvtColor( frame_denoise, frame_denoise, CV_8UC1 ); // Convert the image to grayscale
 
+        bgFrame.convertTo(bgFrame,-1,0.8,-1);
         cv::absdiff(frame_denoise, bgFrame,frame_diff );
         frame_diff.copyTo(frame_denoise);
 
+#if _DEBUG
+        cv::imshow("BG Image",bgFrame);
+        cv::imshow("Denoised And Blured And B&C Increased", frame_denoise);
         cv::imshow("Substracted Denoised And Blured And B&C Increased", frame_denoise);
+#endif
 
         //trackerState.pBGsubmodel->getBackgroundImage(bgFrame);
         /// Handle TAIL Spine Initialization and Fitting
@@ -155,8 +137,8 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         /// Secondary Method Uses Optic Flow
         if (trackerState.FitTailConfigState == 0)
         {
-            trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
             trackerState.tailsplinefit = fitSpineToIntensity(frame_denoise,trackerState,trackerState.tailsplinefit);
+            trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
             drawSpine(outframe,trackerState,trackerState.tailsplinefit );
         }
 
@@ -184,7 +166,6 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
             trackerState.initSpine();
             trackerState.FitTailConfigState = 0;
         }
-
 
 
         // Display video Image on GUI
@@ -302,8 +283,7 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
 
 /// Process Optic Flow of defined food model positions
 /// Uses Lukas Kanard Method to get the estimated new position of Prey Particles
-
-
+/// Note Skip First Tail Root Point - So  tail positions does not drift with OpticFlow
 int trackTailOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,t_fishspline spline,unsigned int nFrame,t_fishspline& spline_next )
 {
     int retCount = 0;
@@ -321,12 +301,17 @@ int trackTailOpticFlow(const cv::Mat frame_grey,const cv::Mat frame_grey_prev,t_
 
    splineKnotf pSpinePoint;
     //Fill POint Vector From Spine point vector
+   int i = 1;
    for ( ft  = spline.begin(); ft!=spline.end(); ++ft)
    {
+       //Skip Odd points (ie 1st ) and follow every 2nd point
+       if (i%2 != 0 )
+           continue;
        pSpinePoint = (splineKnotf)(*ft);
 
        cv::KeyPoint kptSpine(cv::Point2f(pSpinePoint.x,pSpinePoint.y),2,pSpinePoint.angleRad);
        vSpineKeypoints_current.push_back(kptSpine  );
+       i++;
    }
 
     cv::KeyPoint::convert(vSpineKeypoints_current,vptSpine_current);

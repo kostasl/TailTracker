@@ -1,3 +1,5 @@
+#define _DEBUG
+
 #include<iostream>
 #include<sstream>
 #include<fstream>
@@ -104,64 +106,108 @@ int main(int argc, char* argv[]){
 //    string prefix="";
 //    if(argc==4) prefix=argv[3];
 
+//   ///Open Output File Check If We Skip Processed Files
+//   if ( !openDataFile(outputFileName,invideoname,outfishdatafile) )
+//   {
+//        if (gTrackerState.bSkipExisting) //Failed Due to Skip Flag
+//             continue; //Do Next File
+//   }else
+//       writeFishDataCSVHeader(outfishdatafile);
+
     processVideo(omeanWindow,oTrackerstate);
-
-//    char c=' ';
-//    mouse_GetVector_param p; p.status=false;
-//    cv::setMouseCallback("display1",mouse_GetVector,&p);
-//    Mat draw;
-//    Mat kernel = (Mat_<float>(3,3) << 1,  1, 1,
-//                                      1, -8, 1,
-//                                      1,  1, 1);
-
-//    while(c!='q'){
-//            stringstream ss;
-//            ss<<folder<<"/"<<prefix<<"0.tiff";
-//            Mat img=imread(ss.str().c_str(),IMREAD_UNCHANGED);
-//            img.copyTo(draw);
-//            if(p.status) {
-//                arrowedLine(draw,p.pt1,p.pt2,2);
-//                circle(draw,p.pt2,12,2);
-//            }
-//            imshow("display1",draw);
-//            c=waitKey(10);
-//    }
-//    destroyWindow("display1");
-
-
-//    namedWindow("display2",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
-//    resizeWindow("display2",800,600);
-//    cvCreateTrackbar( "frame", "display2", &i, imax,  NULL);
-//    c='1';
-//    while(c!='q'){
-//        stringstream ss;
-//        ss<<folder<<'/'<<prefix<<i<<".tiff";
-
-
-//        Mat img=imread(ss.str().c_str(),IMREAD_UNCHANGED);
-//        Mat ones(img.rows,img.cols,CV_32F,Scalar(1));
-//        img.convertTo(img,CV_32F,1./255);
-//        vector<Point2i> a_pts;
-//        Point2d tangent;
-//        tangent=p.pt2-p.pt1;
-
-//        Mat draw, imgLaplacian,mask, draw_inv;
-//        GaussianBlur(img,draw,Size(5,5),5,5);
-//        filter2D(draw,imgLaplacian,CV_32F,kernel);
-//        threshold(imgLaplacian, mask,0,1,THRESH_BINARY);
-//        mask.convertTo(mask,CV_8U);
-//        draw_inv=ones-draw;
-//        draw_inv.copyTo(draw_inv,mask);
-//        get_interp3(draw_inv,p.pt1,tangent,10,a_pts);
-
-//        for(unsigned int j=0;j<a_pts.size()-1;++j) line(draw,a_pts[j],a_pts[j+1],255,1);
-//        imshow("display2",draw);
-//        c=waitKey(10);
-//    }
-
-//    return 0;
 
    return app.exec();
 }
 
+
+
+void writeFishDataCSVHeader(QFile& data,trackerState& trackerState)
+{
+
+    /// Write Header //
+    QTextStream output(&data);
+    output << "frameN \t tailLengthpx \t ThetaSpine_0 \t ";
+    for (int i=1;i<trackerState.FishTailSpineSegmentCount;i++)
+        output <<  "DThetaSpine_" << i << "\t";
+
+    output << "\n";
+
+}
+
+
+bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString strpostfix,trackerState& trackerState,mainwindow& omeanWindow)
+{
+    int Vcnt = 1;
+    bool newFile = false;
+    //Make ROI dependent File Name
+    QFileInfo fiVid(filenameVid);
+    QFileInfo fiOut(filepathCSV+"/") ;
+    QString fileVidCoreName = fiVid.completeBaseName();
+    QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
+
+    //strpostfix = strpostfix + "_%d.csv";
+
+
+    //char buff[50];
+    //sprintf(buff,strpostfix.toStdString(),Vcnt);
+    //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
+    //dirOutPath.append(buff); //Append extension track and ROI number
+    if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
+    {
+        fileVidCoreName = fileVidCoreName.left(fileVidCoreName.lastIndexOf("_"));
+        dirOutPath = dirOutPath + fileVidCoreName+ "_" + QString::number(Vcnt) +  ".csv";
+    }
+    else
+        dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
+
+    data.setFileName(dirOutPath);
+    //Make Sure We do not Overwrite existing Data Files
+    while (!newFile)
+    {
+        if (!data.exists() || data.isOpen()) //Write HEader
+        {
+            newFile = true;
+        }else{
+            //File Exists
+            if (trackerState.bSkipExisting)
+            {
+                omeanWindow.LogEvent("[warning] Output File Exists and SkipExisting Mode is on.",3);
+                std::cerr << "Skipping Previously Tracked Video File" << std::endl;
+                return false; //File Exists Skip this Video
+            }
+            else
+            {
+                //- Create Name
+            //Filename Is Like AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
+                //Increase Seq Number And Reconstruct Name
+                Vcnt++;
+                // If postfix (track / food) already there, then just add new number
+                if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
+                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + "_" + QString::number(Vcnt) + ".csv";
+                else
+                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
+
+
+
+                data.setFileName(dirOutPath);
+                //data.open(QFile::WriteOnly)
+
+            }
+         }
+    }
+    if (!data.open(QFile::WriteOnly |QFile::Append))
+    {
+        std::cerr << "Could not open output file : " << data.fileName().toStdString() << std::endl;
+        return false;
+    }else {
+        //New File
+        //if (!trackerState.bBlindSourceTracking)
+        std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
+
+        //output.flush();
+
+    }
+
+    return true;
+}
 
