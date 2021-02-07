@@ -28,6 +28,8 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
      //Pointer to The QImage Type - where we draw the tracker images
      ptrackerView = (trackerImageProvider*)engine.imageProvider("trackerframe");
 
+     busyIndicator = (oWindow->findChild<QObject*>("BusyIndicator")); //QTextObject
+
      ptrackerState = trackerstate; //Save pointer to Tracker State Object
 }
 
@@ -64,6 +66,16 @@ void mainwindow::showCVImage(cv::Mat& img,uint nFrame )
     //    cv::circle(frameScene,*ptDrag,5,cv::Scalar(200,200,0),2);
 
 
+}
+
+void mainwindow::setBusyOn()
+{
+    busyIndicator->setProperty("running", true );
+}
+
+void mainwindow::setBusyOff()
+{
+    busyIndicator->setProperty("running", false );
 }
 
 bool mainwindow::eventFilter(QObject *obj, QEvent *event) {

@@ -9,7 +9,8 @@ trackerState::trackerState()
 }
 trackerState::~trackerState()
 {
-    delete pcvcapture;
+    if (pcvcapture)
+        delete pcvcapture;
     kernelOpen.release();
     kernelDilateMOGMask.release();
     kernelOpenfish.release();
@@ -17,347 +18,9 @@ trackerState::~trackerState()
 
 }
 
-void trackerState::setVidFps(float fps)
-{
-    vidfps = fps;
-}
-
-float trackerState::getVidFps()
-{
-    return(vidfps);
-}
-
-
-void trackerState::setTotalFrames(uint nFrames)
-{
-    totalVideoFrames = nFrames;
-}
-
-uint trackerState::getTotalFrames()
-{
-    return(totalVideoFrames);
-}
-
-
-uint trackerState::getCurrentFrameNumber()
-{
-    //if (!bStartFrameChanged)
-    currentFrameNumber = pcvcapture->get(CV_CAP_PROP_POS_FRAMES);
-
-    return(currentFrameNumber);
-}
-
-void trackerState::setCurrentFrameNumber(uint nFrame)
-{
-
-    bStartFrameChanged = (nFrame !=currentFrameNumber);
-    bPaused = true;
-
-    pcvcapture->set(CV_CAP_PROP_POS_FRAMES,nFrame);
-    currentFrameNumber = nFrame;
-}
-
-/// Retrieves next frame from capture device -
-/// \brief Transforms Brighness contrast and Return the next image from the source video
-///
-cv::Mat  trackerState::getNextFrame()
-{
-    cv::Mat nextFrame;
-
-    //Return Last Captured Frame
-    if (bPaused && !atFirstFrame() )
-        return (currentFrame); //Stick to the current Frame
-
-    ///READ FRAME - Check For Error
-     try //Try To Read The Image of that video Frame
-    {
-        //read the current frame
-        if(!pcvcapture->read(nextFrame))
-        {
-            if (atFirstFrame())
-            {
-                //window_main.LogEvent("# [Error]  Unable to read first frame.",2);
-                lastError.first = "[ERROR]  Unable to read first frame.";
-                lastError.second = 2;
-                currentFrameNumber = 0; //Signals To caller that video could not be loaded.
-
-                setCurrentFrameNumber(currentFrameNumber+1); //Skip
-                //Delete the Track File //
-                //removeDataFile(outdatafile);
-                //exit(EXIT_FAILURE);
-            }
-            else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
-            {
-                lastError.first = "[Error]  Unable to read first frame.";
-                lastError.second = 2;
-               if (!atLastFrame())
-               {
-                   //window_main.LogEvent("[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked",3);
-                   //removeDataFile(outdatafile); //Delete The Output File
-                   lastError.first = "[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked";
-                   lastError.second = 3;
-               }
-               else { ///Reached last Frame Video Done
-                   //window_main.LogEvent(" [info] processVideo loop done!",5);
-                   lastError.first = "[INFO] processVideo loop done!";
-                   lastError.second = 5;
-                   //::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
-               }
-               //continue;
-           }
-        }else /// ERROR Reading Frame - Can't Read Next Frame
-            currentFrameNumber++;
-    }catch(const std::exception &e)
-    {
-
-        //window_main.LogEvent(QString(e.what()) + QString(" [Error]  reading frame. Skipping."),2);
-        lastError.first = QString(e.what()) + QString(" [Error]  reading frame. Skipping.");
-        lastError.second = 2;
-
-        if (!atLastFrame())
-            setCurrentFrameNumber(currentFrameNumber++);
-            //pcvcapture->set(CV_CAP_PROP_POS_FRAMES,currentFrame+1);
-        errorFrames++;
-
-        if (errorFrames > 20) //Avoid Getting Stuck Here
-        {
-            // Too Many Error / Fail On Tracking
-            lastError.first = "[ERROR]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure";
-            lastError.second = 5;
-             //window_main.LogEvent("[ERROR]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure",1);
-            //removeDataFile(outdatafile);
-        }
-    }
-
-
-
-
-    /// Done Retrieving next Frame /Save if not empty Good
-    if (!nextFrame.empty())
-    {
-        /// Do Simple Brightness Contrast Transform //
-        // Change Brightness Contrast
-        nextFrame.convertTo(nextFrame, -1, contrastGain, brightness);
-        //nextFrame = frame_BCTrans;
-
-        nextFrame.copyTo(currentFrame);
-    }
-
-
-    return(nextFrame);
-}
-void trackerState::setStopFrame(uint nFrame)
-{
-    endFrame = nFrame;
-}
-
-uint trackerState::getStopFrame()
-{
-    return(endFrame);
-}
-
-
-bool trackerState::atFirstFrame()
-{
-    return(currentFrameNumber == startFrame);
-}
-bool trackerState::atLastFrame()
-{
-    return(currentFrameNumber == (totalVideoFrames-1));
-}
-bool trackerState::atStopFrame()
-{
-    return(currentFrameNumber == endFrame);
-}
-
-void trackerState::processInputKey(char Key)
-{
-    userInputKey = (int)Key;
-
-    switch (Key)
-    {
-     case 27:
-     case 'Q':
-     case 'q':
-            bExiting = true;
-            bTracking = false;
-            bPaused = true;
-            break;
-
-    case 'T':
-    case 't':
-        bTracking = true;
-        break;
-
-    case 'P':
-    case 'p':
-        bPaused = true;
-        std::clog << "[INFO] Paused " << std::endl;
-        break;
-
-    case 'R':
-    case 'r':
-        bPaused = false;
-
-    }
-}
-
-//Return Last Recorded error and Remove error
-t_tracker_error trackerState::getLastError()
-{
-  t_tracker_error tmp_lastError = lastError;
-  lastError.first = "OK";
-  lastError.second = 10; //Lowest Priority
-  return(tmp_lastError);
-}
-
-/// \brief Initialize BG substractor objects, depending on options / can use cuda
-int trackerState::initInputVideoStream()
-{
-    QFileInfo videoFile = getNextVideoFile();
-    int ret = 0;
-    if (!videoFile .exists())
-    {
-        lastError.first = "[ERROR] Failed to find video file";
-        lastError.second = 1;
-        return 0;
-    }else
-    {
-        lastError.first = QString("Processing video file") + videoFile.fileName();
-        lastError.second = 9;
-    }
-
-    if (videoFile.suffix() == "avi" || videoFile.suffix() == "mp4" || videoFile.suffix() == "mkv")
-    {
-        std::clog << "Attempting to open video file " << videoFile.fileName().toStdString() << std::endl;
-
-        pcvcapture = new cv::VideoCapture(videoFile.filePath().toStdString());
-        if(!pcvcapture->isOpened())
-        {
-            //error in opening the video input
-            lastError.first = "[ERROR] Failed to open video capture device";
-            lastError.second = 1;
-            ret = 0;
-        }else{
-            lastError.first = "[INFO] video capture device opened succesfully";
-            lastError.second = 10;
-            ret = 1;
-        }
-
-        setVidFps(pcvcapture->get(CV_CAP_PROP_FPS) );
-        setTotalFrames(pcvcapture->get(CV_CAP_PROP_FRAME_COUNT));
-        setStopFrame(pcvcapture->get(CV_CAP_PROP_FRAME_COUNT));
-
-      }//If File is a video
-
-    //  Check If it contains no Frames And Exit
-    if (getTotalFrames() < 2)
-    {
-        lastError.first = "[ERROR] This Video File is empty ";
-        lastError.second = 2;
-        ret = 0;
-        pcvcapture->release();
-    }
-
-    // Video  Paused upon opening
-    if (bStartPaused)
-        bPaused = true;
-
-    return ret;
-}//End of Function
-
-/// Do a prelim Run Through MOGHistory initial video frames and compute BG image
-/// Save all BGImages on the way and then take the median image for the BG substraction
-/// This BG image reduced in brightness and substracted from image before tracking the tail.
-/// \brief Initialize BG substractor objects, depending on options / can use cuda
-void trackerState::initBGSubstraction()
-{
-    std::vector<cv::Mat> listImages(MOGhistory);
-
-    bPaused = false;
-    //Doesn't matter if cuda FLAG is enabled
-    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, MOGVarThreshold,false);
-
-    pBGsubmodel->setHistory(MOGhistory);
-    pBGsubmodel->setNMixtures(MOGNMixtures);
-    pBGsubmodel->setBackgroundRatio(MOGBGRatio);
-
-    cv::Mat frame,fgMask;//imgInit;
-
-//    imgInit = cv::Mat::ones(200,200,CV_8UC1);
-//    pBGsubmodel->apply(imgInit,fgMask,MOGLearningRate);
-
-    int i = 0;
-    //Get BGImage
-    while (getCurrentFrameNumber() < MOGhistory && (!atLastFrame()))
-    {
-        frame = getNextFrame();
-
-        //LearningRate Negative parameter value makes the algorithm to use some automatically chosen learning rate
-        pBGsubmodel->apply(frame,fgMask,MOGLearningRate);
-        pBGsubmodel->getBackgroundImage(listImages[i++]);
-        //cv::imshow("fg MAsk Learning",fgMask);
-        cv::imshow("BG Model Learning",listImages[i-1]);
-
-        QCoreApplication::processEvents(QEventLoop::AllEvents);
-    }
-    setCurrentFrameNumber(1); //Reset To First Frame
-    //Make Learning Nominal
-    MOGLearningRate = MOGNominamLearningRate; //Back to Nominal Rate - So Almost no Learning Happens
-    bPaused = bStartPaused;
-
-
-    ///// GEt Median Image - SORT images By Pixel intensity //
-    cv::Mat tmp;
-    // We will sorting pixels where the first mat will get the lowest pixels and the last one, the highest
-    for(int i = 0; i < listImages.size(); i++) {
-        for(int j = i + 1; j < listImages.size(); j++) {
-            listImages[i].copyTo(tmp);
-            //Calculates per-element maximum/minimum of two arrays
-            cv::min(listImages[i], listImages[j], listImages[i]);
-            cv::max(listImages[j], tmp, listImages[j]);
-//Uncomment the following to sort images by total intensity
-//            cv::Scalar intensity_i = cv::sum(listImages[i]);
-//            cv::Scalar intensity_j = cv::sum(listImages[j]);
-//            if ( intensity_i[1] >intensity_j[1] )
-//            {
-//               listImages[j].copyTo(listImages[i]);
-//               tmp.copyTo(listImages[i]);
-//            }
-        }
-    }
-    /// We Save the Minimum - ie 1st element - As the background - so any moving components are removed
-    bgFrame = listImages[0]; //
-   // For Debuging
-   #ifdef _DEBUG
-    cv::imshow("Median BG Model image",listImages[listImages.size() / 2]);
-    cv::imshow("Lowest PX BG Model image",listImages[1]);
-    cv::imshow("Highest PX BG Model image",listImages[listImages.size() -1]);
-    #endif
-}
-
-
-
-/// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
-QFileInfo trackerState::getNextVideoFile()
-{
-    if (invidFileList.count() >0)
-    {
-        invideofile.setFile(invidFileList.first());
-        if (!invideofile.exists())
-        {
-            std::cerr << "Error video file missing " << invideofile.path().toStdString() << std::endl;
-        }
-        invidFileList.removeFirst();
-
-        return (invideofile);
-    }
-
-    return(QFileInfo());
-}
 
 /// \brief Process user provided config params and set corresponding internal/global variables
-trackerState::trackerState(cv::CommandLineParser& parser):trackerState()
+trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* ptrackerView ):trackerState()
 {
 
     QString stroutFilename;
@@ -467,8 +130,8 @@ trackerState::trackerState(cv::CommandLineParser& parser):trackerState()
     if (parser.has("StartPaused"))
          bStartPaused = (parser.get<int>("StartPaused") == 1)?true:false;
 
-     //uiStartFrame = parser.get<uint>("startframe");
-     //uiStopFrame = parser.get<uint>("stopframe");
+     startFrame = parser.get<uint>("startframe");
+     endFrame = parser.get<uint>("stopframe");
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
@@ -476,12 +139,236 @@ trackerState::trackerState(cv::CommandLineParser& parser):trackerState()
     kernelOpenfish      = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1)); //Note When Using Grad Morp / and Low res images this needs to be 3,3
     kernelClose         = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
 
+    mptrackerView = ptrackerView;
     /// create Gaussian Smoothing kernels for Contour //
     //assert(dGaussContourKernelSize % 2 == 1); //M is an odd number
     //getGaussianDerivs(dGaussContourKernelSigma,dGaussContourKernelSize,gGaussian,dgGaussian,d2gGaussian);
 
 }
 /// END OF INIT GLOBAL PARAMS //
+
+
+void trackerState::setCurrentFrameNumber(uint nFrame)
+{
+    bStartFrameChanged = (nFrame !=mptrackerView->getCurrentFrameNumber());
+    bPaused = true;
+    mptrackerView->setCurrentFrameNumber(nFrame);
+}
+
+
+
+/// Retrieves next frame from capture device -
+/// \brief Transforms Brighness contrast and Return the next image from the source video
+///
+cv::Mat  trackerState::getNextFrame()
+{
+
+
+    cv::Mat nextFrame;
+
+    //Return Last Captured Frame
+    if (bPaused && !atFirstFrame() )
+        return (currentFrame); //Stick to the current Frame
+
+        nextFrame = mptrackerView->getNextFrame();
+        lastError =  mptrackerView->getLastError();
+
+     currentFrame = nextFrame;
+    return(nextFrame);
+}
+void trackerState::setStopFrame(uint nFrame)
+{
+    endFrame = nFrame;
+}
+
+uint trackerState::getStopFrame()
+{
+    return(endFrame);
+}
+
+
+bool trackerState::atFirstFrame()
+{
+    return(mptrackerView->getCurrentFrameNumber() == startFrame);
+}
+bool trackerState::atLastFrame()
+{
+    return(mptrackerView->getCurrentFrameNumber() == (mptrackerView->getTotalFrames()));
+}
+bool trackerState::atStopFrame()
+{
+    return(mptrackerView->getCurrentFrameNumber() == endFrame);
+}
+
+trackerImageProvider* trackerState::ImageSequenceProvider() const
+{
+    return (mptrackerView);
+}
+
+void trackerState::processInputKey(char Key)
+{
+    userInputKey = (int)Key;
+
+    switch (Key)
+    {
+     case 27:
+     case 'Q':
+     case 'q':
+            bExiting = true;
+            bTracking = false;
+            bPaused = true;
+            break;
+
+    case 'T':
+    case 't':
+        bTracking = true;
+        break;
+
+    case 'P':
+    case 'p':
+        bPaused = true;
+        std::clog << "[INFO] Paused " << std::endl;
+        break;
+
+    case 'R':
+    case 'r':
+        bPaused = false;
+
+    }
+}
+
+//Return Last Recorded error and Remove error
+t_tracker_error trackerState::getLastError()
+{
+  t_tracker_error tmp_lastError = lastError;
+  lastError.first = "OK";
+  lastError.second = 10; //Lowest Priority
+  return(tmp_lastError);
+}
+
+/// \brief Initialize BG substractor objects, depending on options / can use cuda
+int trackerState::initInputVideoStream()
+{
+    QFileInfo videoFile = getNextVideoFile();
+
+    int ret = mptrackerView->initInputVideoStream(videoFile);
+    lastError = mptrackerView->getLastError();
+
+    //move to requested start frame
+    mptrackerView->setCurrentFrameNumber(startFrame);
+
+    if (endFrame == 0) //If User has not set Stop Point- Set it to end of video
+        endFrame =  mptrackerView->getTotalFrames();
+
+    assert(startFrame < endFrame);
+
+    //  Check If it contains no Frames And Exit
+    if (mptrackerView->getTotalFrames() < 2)
+    {
+        lastError.first = "[ERROR] This Video File is empty ";
+        lastError.second = 2;
+        ret = 0;
+        mptrackerView->closeInputStream();
+    }
+
+    // Video  Paused upon opening
+    if (bStartPaused)
+        bPaused = true;
+
+    return ret;
+}//End of Function
+
+
+
+/// Do a prelim Run Through MOGHistory initial video frames and compute BG image
+/// Save all BGImages on the way and then take the median image for the BG substraction
+/// This BG image reduced in brightness and substracted from image before tracking the tail.
+/// \brief Initialize BG substractor objects, depending on options / can use cuda
+void trackerState::initBGSubstraction()
+{
+    std::vector<cv::Mat> listImages(MOGhistory);
+
+    bPaused = false;
+    //Doesn't matter if cuda FLAG is enabled
+    pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, MOGVarThreshold,false);
+
+    pBGsubmodel->setHistory(MOGhistory);
+    pBGsubmodel->setNMixtures(MOGNMixtures);
+    pBGsubmodel->setBackgroundRatio(MOGBGRatio);
+
+    cv::Mat frame,fgMask;//imgInit;
+
+//    imgInit = cv::Mat::ones(200,200,CV_8UC1);
+//    pBGsubmodel->apply(imgInit,fgMask,MOGLearningRate);
+
+    int i = 0;
+    //Get BGImage
+    while (mptrackerView->getCurrentFrameNumber() <= MOGhistory && (!atLastFrame()))
+    {
+        frame = mptrackerView->getNextFrame();
+
+        //LearningRate Negative parameter value makes the algorithm to use some automatically chosen learning rate
+        pBGsubmodel->apply(frame,fgMask,MOGLearningRate);
+        pBGsubmodel->getBackgroundImage(listImages[i++]);
+        //cv::imshow("fg MAsk Learning",fgMask);
+        cv::imshow("BG Model Learning",listImages[i-1]);
+
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
+    }
+    setCurrentFrameNumber(1); //Reset To First Frame
+    //Make Learning Nominal
+    MOGLearningRate = MOGNominamLearningRate; //Back to Nominal Rate - So Almost no Learning Happens
+    bPaused = bStartPaused;
+
+
+    ///// GEt Median Image - SORT images By Pixel intensity //
+    cv::Mat tmp;
+    // We will sorting pixels where the first mat will get the lowest pixels and the last one, the highest
+    for(int i = 0; i < listImages.size(); i++) {
+        for(int j = i + 1; j < listImages.size(); j++) {
+            listImages[i].copyTo(tmp);
+            //Calculates per-element maximum/minimum of two arrays
+            cv::min(listImages[i], listImages[j], listImages[i]);
+            cv::max(listImages[j], tmp, listImages[j]);
+//Uncomment the following to sort images by total intensity
+//            cv::Scalar intensity_i = cv::sum(listImages[i]);
+//            cv::Scalar intensity_j = cv::sum(listImages[j]);
+//            if ( intensity_i[1] >intensity_j[1] )
+//            {
+//               listImages[j].copyTo(listImages[i]);
+//               tmp.copyTo(listImages[i]);
+//            }
+        }
+    }
+    /// We Save the Minimum - ie 1st element - As the background - so any moving components are removed
+    bgFrame = listImages[0]; //
+   // For Debuging
+   #ifdef _DEBUG
+    cv::imshow("Median BG Model image",listImages[listImages.size() / 2]);
+    cv::imshow("Lowest PX BG Model image",listImages[1]);
+    cv::imshow("Highest PX BG Model image",listImages[listImages.size() -1]);
+    #endif
+}
+
+
+
+/// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
+QFileInfo trackerState::getNextVideoFile()
+{
+    if (invidFileList.count() >0)
+    {
+        invideofile.setFile(invidFileList.first());
+        if (!invideofile.exists())
+        {
+            std::cerr << "Error video file missing " << invideofile.path().toStdString() << std::endl;
+        }
+        invidFileList.removeFirst();
+
+        return (invideofile);
+    }
+
+    return(QFileInfo());
+}
 
 void trackerState::initSpine()
 {

@@ -27,9 +27,11 @@
 #include <opencv2/core/utility.hpp>
 #include <opencv2/videoio.hpp>
 
-typedef std::pair<QString,int> t_tracker_error;
 
 
+#include <trackerimageprovider.h>
+
+//class trackerImageProvider; //fwd declaration
 /// \brief defines points along our custom linear spline that is fitted along the fish contour
 typedef struct
 {
@@ -49,7 +51,7 @@ class trackerState
 public:
     trackerState();
     ~trackerState();
-    trackerState(cv::CommandLineParser& parser); //Read Command Line/Config Options
+    trackerState(cv::CommandLineParser& parser,trackerImageProvider* ptrackerView); //Read Command Line/Config Options
     void initBGSubstraction();
     int initInputVideoStream();
     void initSpine();
@@ -68,6 +70,7 @@ public:
     bool atFirstFrame();
     bool atLastFrame();
     bool atStopFrame();
+    trackerImageProvider* ImageSequenceProvider() const;
     void processInputKey(char Key);
     t_tracker_error getLastError();
 
@@ -86,7 +89,7 @@ public:
     bool bRemovePixelNoise = false;
     int g_Segthresh = 0;
     int userInputKey = 0;
-    uint startFrame;
+    uint startFrame = 1;
     uint endFrame;
     uint errorFrames = 0;
 
@@ -109,13 +112,15 @@ public:
 
     const int FitTailIntensityScanAngleDeg   = 35; //
     const int FishTailSpineSegmentCount      = 16;
-    int FishTailSpineSegmentLength           = 10; //Length of Each Segment
+    int FishTailSpineSegmentLength           = 9; //Length of Each Segment
     double fishBearingRads                 = 45.0*CV_PI/180.0; //Larval Orientation
     cv::Point ptTailRoot                   = cv::Point(122,48);
     int FitTailConfigState                 = 0; //A state Machine  register
 
     t_fishspline tailsplinefit; ///X-Y Coordinates of Fitted spline to contour
 
+protected:
+    trackerImageProvider* mptrackerView; //pointer to external ImageSequence Provider
 
 private:
     QDir outdir;
@@ -127,9 +132,9 @@ private:
     t_tracker_error lastError;
     cv::VideoCapture* pcvcapture;
    //
-   float vidfps;
-   uint totalVideoFrames;
-   uint currentFrameNumber; //The current frame number of tracking
+   //float vidfps;
+   //uint totalVideoFrames;
+   //uint currentFrameNumber; //The current frame number of tracking
 
 
     //Morphological Kernels
@@ -138,6 +143,7 @@ private:
     cv::Mat kernelDilateMOGMask;
     cv::Mat kernelOpenfish;
     cv::Mat kernelClose;
+
 
 
 };

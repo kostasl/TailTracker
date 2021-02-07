@@ -51,17 +51,18 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     window_main.LogEvent(lastError.first,lastError.second);
 
 
-    window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.getTotalFrames() ),5 );
+    window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.ImageSequenceProvider()->getTotalFrames() ),5 );
     window_main.LogEvent(QString("Calculating Background image"),10 );
+    window_main.setBusyOn();
     trackerState.initBGSubstraction();
-
+    window_main.setBusyOff();
 
     //read input data. ESC or 'q' for quitting
     while(!trackerState.bExiting && !trackerState.atLastFrame())
     {
         /// Flow Control Code  - For When Looking at Specific Frame Region ///
         // 1st Check If user changed Frame - and go to that frame
-        nFrame = trackerState.getCurrentFrameNumber();
+        nFrame = trackerState.ImageSequenceProvider()->getCurrentFrameNumber();
 
 
 
@@ -77,7 +78,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         }
 
         //Update Frame Index
-        nFrame = trackerState.getCurrentFrameNumber();
+        nFrame = trackerState.ImageSequenceProvider()->getCurrentFrameNumber();
 
 
         //Check If StopFrame Reached And Pause
@@ -177,7 +178,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
      }/// Main While - Reading Frames Loop
 
 
-    return (trackerState.getCurrentFrameNumber());
+    return (trackerState.ImageSequenceProvider()->getCurrentFrameNumber());
 }
 
 //// Remove Pixel Noise

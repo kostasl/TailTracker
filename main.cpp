@@ -55,9 +55,6 @@ int main(int argc, char* argv[]){
     }, Qt::QueuedConnection);
     engine.load(mainwindow_url);
 
-    trackerImageProvider* ptrackerView = new trackerImageProvider();
-
-    engine.addImageProvider(QLatin1String("trackerframe"),ptrackerView);
 
      // To make a new window Instance:
     //QQmlComponent mainWindow(&engine,url);
@@ -79,6 +76,8 @@ int main(int argc, char* argv[]){
         "{TrackFish ft | 1  | Track Fish not just the moving prey }"
         "{StartPaused | 1  | Do not initiate tracking upon start.}"
         "{BGThreshold bgthres | 30  | Absolute grey value used to segment background}"
+        "{startframe s | 1  | Video Will start by Skipping to this frame}"
+        "{stopframe e | 0  | Video Will stop at this frame}"
         ;
 
     ///Parse Command line Args
@@ -97,8 +96,10 @@ int main(int argc, char* argv[]){
     parser.about(ssMsg.str() );
 
 
-   trackerState oTrackerstate(parser);
-   mainwindow omeanWindow(engine,&oTrackerstate);
+    trackerImageProvider* ptrackerView = new trackerImageProvider();
+    engine.addImageProvider(QLatin1String("trackerframe"),ptrackerView);
+    trackerState oTrackerstate(parser,ptrackerView);
+    mainwindow omeanWindow(engine,&oTrackerstate);
 
     //int i=1505;
     //int imax=atoi(argv[2]);

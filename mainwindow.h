@@ -88,6 +88,9 @@ public:
 
 
 public:
+       /// Activate Busy Indicator
+       void setBusyOn();
+       void setBusyOff();
 
 cv::Mat frameScene; //CvMat Last Frame Drawn
 QImage qimg; //SCene Image Updated in showCVImage Image
@@ -102,6 +105,7 @@ private :
     QObject* txtLog;
     QObject* imgScene;
     QObject* oMouseArea; //Video frame Mouse Are
+    QObject* busyIndicator;
 
     trackerState*  ptrackerState; //POinter to External instance of tracker state - Passed from Constructor
 };

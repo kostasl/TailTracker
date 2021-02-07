@@ -1,5 +1,6 @@
 import QtQuick 2.12
 import QtQuick.Window 2.12
+import QtQuick.Controls 2.3
 
 Window {
     objectName:"mainWindow"
@@ -9,6 +10,7 @@ Window {
     color: "#729fcf"
     title: qsTr("2p microscope camera tail tracker ")
     signal qmlSignal(string msg)
+    onSceneGraphInitialized: busyIndicator.running = false;
 //    onContentItemChanged: {
 //            qmlSignal("Change");
 //    }
@@ -44,10 +46,11 @@ Window {
         fillMode: Image.PreserveAspectFit
         source: "image://trackerframe/0"
         onStatusChanged: {
-               //   if(status == Image.Ready)
-                      //indicator.running = false;
-                      //console.log("Img")
+                  if(status == Image.Ready)
+                      busyIndicator.running = false;
+                      //console.log("BG Calculation Done. Ready to track.")
               }
+
 
         MouseArea {
                   width: 200
@@ -65,7 +68,7 @@ Window {
                   signal qmlMouseReleased()
                   signal qmlMouseMoved()
                   onClicked: {
-                      //indicator.running = true;
+
                       //console.log("irregular area clicked");
                       //qmlMouseClickSig();
                       //videoImage.source = "image://trackerframe/" + Math.random(1000)
@@ -88,13 +91,16 @@ Window {
                       cursorShape = Qt.ArrowCursor;
                   }
 
-        }
+                  BusyIndicator {
+                      id: busyIndicator
+                      objectName: "BusyIndicator"
+                      anchors.centerIn: parent
+                      running: true
+                      x: 70
+                      y: 70
+                  }
 
-//        BusyIndicator {
-//            id: indicator
-//            anchors.centerIn: parent
-//            running: false
-//        }
+        }
 
 
     }
