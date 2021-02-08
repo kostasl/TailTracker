@@ -9,11 +9,11 @@
 using namespace std;
 using namespace cv;
 
+cv::Mat frame_debug;
 float angleBetween(const cv::Point2f &v1, const cv::Point2f &v2)
 {
-
     // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
-    return(std::atan2(v1.y-v2.y,v1.x-v2.x)); //+CV_PI/2.0
+    return(std::atan2(v1.y-v2.y,v1.x-v2.x))+CV_PI/2.0;
 
 //    float len1 = sqrt(v1.x * v1.x + v1.y * v1.y);
 //    float len2 = sqrt(v2.x * v2.x + v2.y * v2.y);
@@ -145,8 +145,11 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         /// Secondary Method Uses Optic Flow
         if (trackerState.FitTailConfigState == 0)
         {
-            //trackerState.tailsplinefit = fitSpineToIntensity(frame_denoise,trackerState,trackerState.tailsplinefit);
-            //trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
+#ifdef _DEBUG
+            outframe.copyTo(frame_debug);
+#endif
+            trackerState.tailsplinefit = fitSpineToIntensity(frame_denoise,trackerState,trackerState.tailsplinefit);
+            trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
             drawSpine(outframe,trackerState,trackerState.tailsplinefit );
 
             trackerState.saveFrameTrack();
@@ -169,8 +172,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         // Done Setting Spine Direction - Set Length And Bearing From User Input
         if (trackerState.FitTailConfigState == 2)
         {
-            trackerState.fishBearingRads = angleBetween(cv::Point(trackerState.tailsplinefit[1].x,trackerState.tailsplinefit[1].y),
-                                                    trackerState.ptTailRoot);
+            trackerState.fishBearingRads = angleBetween(trackerState.ptTailRoot,cv::Point(trackerState.tailsplinefit[1].x,trackerState.tailsplinefit[1].y)                                                    );
 
             trackerState.FishTailSpineSegmentLength = cv::norm(trackerState.ptTailRoot - cv::Point(trackerState.tailsplinefit[1].x,trackerState.tailsplinefit[1].y))/trackerState.FishTailSpineSegmentCount;
             trackerState.initSpine();
@@ -213,7 +215,8 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 //}
 
 
-t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerState,t_fishspline spline){
+t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerState,t_fishspline spline)
+{
 
     const double Rad2Deg = (180.0/CV_PI);
     const size_t AP_N= trackerState.FishTailSpineSegmentCount;
@@ -233,10 +236,15 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
     { //Loop Through Spine Points
         ellipse_pts.clear();
 
-        angle = spline[k-1].angleRad*Rad2Deg-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
+        angle = spline[k-1].angleRad/CV_PI*180.0-90.0;  //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y),
-                cv::Size(step_size,step_size), 0, angle-trackerState.FitTailIntensityScanAngleDeg, angle+trackerState.FitTailIntensityScanAngleDeg, 1, ellipse_pts);
+                cv::Size(step_size,step_size),0, angle-trackerState.FitTailIntensityScanAngleDeg, angle+trackerState.FitTailIntensityScanAngleDeg, 1, ellipse_pts);
+
+#ifdef _DEBUG
+        cv::polylines(frame_debug,ellipse_pts,false,CV_RGB(250,250,0));
+        cv::imshow("Arc",frame_debug);
+#endif
 
         if (ellipse_pts.size() ==0)
         {
@@ -250,8 +258,9 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
         uint iPxIntensity       = 0;
         uint iSumPxIntensity    = 1;
         // Loop Integrate Mass //
-        for(int idx=0;idx<(int)ellipse_pts.size();idx++){
-            //Obtain Value From Image at Point on Arc - Boundit in case it goes outside image
+        for(int idx=0;idx<(int)ellipse_pts.size();idx++)
+        {
+            //Obtain Value From Image at Point on Arc - Bound it, in case it goes outside image
             int x = std::min(frameimg_Blur.cols,std::max(1,ellipse_pts[idx].x));
             int y = std::min(frameimg_Blur.rows,std::max(1,ellipse_pts[idx].y));
             iPxIntensity = c_gain*frameimg_Blur.at<uchar>(cv::Point(x,y));
@@ -266,16 +275,15 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
             }
         } //Loop Through Arc Sample Points
 
-        //Update Spline to COM (Centre Of Mass) And Set As New Spline Point
-        uint comIdx = iTailArcMoment/iSumPxIntensity;
+        //Use Max Intensity Idx //
+        //uint comIdx = iTailArcMoment/iSumPxIntensity;Update Spline to COM (Centre Of Mass) And Set As New Spline Point
         spline[k].x     = ellipse_pts[iMaxIdx].x;
         spline[k].y     = ellipse_pts[iMaxIdx].y;
         /// Get Arc tan and Translate back to 0 being the Vertical Axis
         if (k==1) //1st point Always points in the opposite direction of the body
-            spline[k-1].angleRad    = (-(trackerState.fishBearingRads));// ; //  //Spine Looks In Opposite Direction
+            spline[k-1].angleRad    = (trackerState.fishBearingRads)-CV_PI; //  //Spine Looks In Opposite Direction
         else
-            spline[k-1].angleRad = angleBetween(cv::Point(spline[k].y,spline[k].x),cv::Point(spline[k-1].y,spline[k-1].x));
-            //spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+            spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
 
         //Set Next point Angle To follow this one - Otherwise Large deviation Spline
         if (k < AP_N)
@@ -284,7 +292,6 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
         //Constrain Large Deviations
         if (std::abs(spline[k-1].angleRad - spline[k].angleRad) > CV_PI/2.0)
            spline[k].angleRad = spline[k-1].angleRad; //Spine Curvature by Initializing next spine point Constraint Next
-
     }
 
 
@@ -369,15 +376,6 @@ void drawSpine(cv::Mat& outFrame,trackerState& trackerState,t_fishspline& spline
         cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),
                  cv::Point(spline[j+1].x,spline[j+1].y),CV_RGB(120,120,0),1);
 
-            //cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),cv::Point(spline[j+1].x,spline[j+1].y),TRACKER_COLOURMAP[0],1);
-//        else
-//        { //Draw Terminal (hidden) point - which is not a spine knot
-//            cv::Point ptTerm;
-//            ptTerm.x = spline[j].x + ((double)c_spineSegL)*sin(spline[j].angleRad);
-//            ptTerm.y = spline[j].y - ((double)c_spineSegL)*cos(spline[j].angleRad);
-
-//            cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),ptTerm,TRACKER_COLOURMAP[0],1);
-//        }
     }
     //Draw Final Tail (imaginary Spine) Point
     //if (inactiveFrames == 0)
@@ -387,172 +385,6 @@ void drawSpine(cv::Mat& outFrame,trackerState& trackerState,t_fishspline& spline
 
 }
 
-
-
-
-void mouse_GetVector(int event, int x, int y, int flags, void* p){
-    mouse_GetVector_param* param=(mouse_GetVector_param*)p;
-	if  ( event == cv::EVENT_LBUTTONDOWN ){
-	    param->pt1.x=x;
-		param->pt1.y=y;
-		param->status=true;
-    } 
-    
-	if (param->status==true){
-		param->pt2.x=x;
-		param->pt2.y=y;
-	}
-
-    if (event==cv::EVENT_LBUTTONUP ){
-            param->status=false;
-    }
-	   
-}
-
-void get_interp(Mat &src, Point2i start, Point2d tgt, vector<Point2i>& anchor_pts,Mat mask){
-	MatIterator_<uchar> it_mask;
-	MatIterator_<float> it=src.begin<float>();
-	int counter=0;
-	int x,y;
-	int cols=src.cols;
-	double av_x=0, av_y=0, weight=1;
-	tgt.x/=tgt.dot(tgt);
-	tgt.y/=tgt.dot(tgt);
-	Point2i pos=start;
-	int n_anch=0;
-
-	while(n_anch<20){
-		Mat mask2 = Mat::zeros(mask.rows,mask.cols,CV_8U);
-        
-		circle(mask2,pos,6,255,1);
-		src.copyTo(mask,mask2);
-		it=src.begin<float>();
-		counter=0;
-		av_x=0; av_y=0; weight=1;
-		for(it_mask=mask2.begin<uchar>();it_mask!=mask2.end<uchar>();++it_mask){
-			y=counter/cols;
-			x=counter%cols;
-			if(*it_mask>0) {
-				if((x-pos.x)*tgt.x+(y-pos.y)*tgt.y>0){
-				//if((x-pos.x)*tgt.x+(y-pos.y)*tgt.y>sqrt(pow(x-pos.x,2)+pow(y-pos.y,2))*sqrt(tgt.dot(tgt))*0.6){
-					if(*it<weight) {
-						av_x=x;
-						av_y=y;
-						weight=*it;
-					}
-				}
-			}
-			++it;
-			counter++;
-		}
-		anchor_pts.push_back(Point2i(floor(av_x),floor(av_y)));
-		tgt=anchor_pts.back()-pos;
-		tgt.x/=tgt.dot(tgt);
-		tgt.y/=tgt.dot(tgt);
-		
-		pos=anchor_pts.back();
-		n_anch++;
-	}
-
-}
-
-void get_interp2(Mat &src, Point2i start, Point2d tgt_start, double step_size, vector<Point2i>& anchor_pts){
-	const size_t AP_N=18;
-	vector<Point2i> tmp_pts(AP_N);
-	Point2i tgt;
-	anchor_pts.resize(AP_N);
-	anchor_pts[0]=start;
-	tmp_pts[0]=start;
-	unsigned int k=0;
-	double loc,loc_add, val=0;
-	int angle;
-	srand(2);
-	ofstream out("file.log");
-	
-	for(unsigned int counter=0;counter<7000;counter++){
-		loc=0;
-		for(k=1;k<AP_N;k++){			
-			vector<Point2i> ellipse_pts;
-			if(k==1) tgt=tgt_start;
-			else tgt=tmp_pts[k-1]-tmp_pts[k-2];
-			
-			if(tgt.x>0 ){
-				angle=floor(atan((double)tgt.y/tgt.x)/CV_PI*180);
-			} else if(tgt.x<0) {
-				angle=180+floor(atan((double)tgt.y/tgt.x)/CV_PI*180);
-			} else if(tgt.x==0){
-				if(tgt.y>0) angle=90;
-				else angle=-90;
-			}
-
-			ellipse2Poly(tmp_pts[k-1], Size(4,4), 0, angle-20, angle+20, 1, ellipse_pts);
-					    
-			int index;
-			loc_add=0;
-			while(loc_add==0){
-				index=rand() % ellipse_pts.size();
-				loc_add=src.at<float>(ellipse_pts[index].y,ellipse_pts[index].x);
-			}
-			tmp_pts[k]=ellipse_pts[index];
-			out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
-			loc+=loc_add;
-
-			//if(loc>val) break;
-		}
-	    
-		if(loc > val){
-			val=loc;
-			for(k=1;k<AP_N;++k) anchor_pts[k]=tmp_pts[k];
-		}
-		out<<endl;
-	}
-}
-
-
-void get_interp3(Mat &src, Point2i start, Point2d tgt_start, double step_size, vector<Point2i>& anchor_pts){
-	const size_t AP_N=20;
-	vector<Point2i> tmp_pts(AP_N);
-	Point2i tgt;
-	anchor_pts.resize(AP_N);
-	anchor_pts[0]=start;
-	tmp_pts[0]=start;
-	unsigned int k=0;
-	double loc,loc_add, val=0;
-	int angle;
-	ofstream out("file.log");
-	
-	for(k=1;k<AP_N;k++){			
-		vector<Point2i> ellipse_pts;
-		if(k==1) tgt=tgt_start;
-		else tgt=tmp_pts[k-1]-tmp_pts[k-2];
-		
-		if(tgt.x>0 ){
-			angle=floor(atan((double)tgt.y/tgt.x)/CV_PI*180);
-		} else if(tgt.x<0) {
-			angle=180+floor(atan((double)tgt.y/tgt.x)/CV_PI*180);
-		} else if(tgt.x==0){
-			if(tgt.y>0) angle=90;
-			else angle=-90;
-		}
-		
-		ellipse2Poly(tmp_pts[k-1], Size(4,4), 0, angle-20, angle+20, 1, ellipse_pts);
-		
-		int index;
-		loc_add=0;
-		index=0;
-		for(index=0;index<ellipse_pts.size();++index){
-			loc=src.at<float>(ellipse_pts[index].y,ellipse_pts[index].x);
-			if(loc>loc_add){
-				tmp_pts[k]=ellipse_pts[index];
-				loc_add=loc;
-			}
-		}
-		//out<<tgt<<' '<<angle<<' '<<tmp_pts[k]<<' '<<loc<<' '<<index<<' '<<ellipse_pts.size()<<endl;
-	    
-		anchor_pts[k]=tmp_pts[k];
-	}
-	out<<endl;
-}
 
 
 

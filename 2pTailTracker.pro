@@ -44,6 +44,7 @@ QML_IMPORT_PATH =
 QML_DESIGNER_IMPORT_PATH =
 
 # Default rules for deployment.
+target.path = /home/kostasl/workspace/2pTailTracker/bin/AppDir
 qnx: target.path = /tmp/$${TARGET}/bin
 else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target

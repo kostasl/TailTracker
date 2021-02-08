@@ -114,10 +114,10 @@ public:
     double contrastGain = 2.4;
     double brightness  = 25;
 
-    const int FitTailIntensityScanAngleDeg   = 35; //
-    const int FishTailSpineSegmentCount      = 16;
+    const int FitTailIntensityScanAngleDeg   = 35; //35
+    const int FishTailSpineSegmentCount      = 15;
     int FishTailSpineSegmentLength           = 9; //Length of Each Segment
-    double fishBearingRads                 = 27.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default
+    double fishBearingRads                 = 26.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default
     cv::Point ptTailRoot                   = cv::Point(122,48);
     int FitTailConfigState                 = 0; //A state Machine  register
 

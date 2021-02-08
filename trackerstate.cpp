@@ -272,6 +272,8 @@ void trackerState::processInputKey(char Key)
            lastError.first = "[INFO] Cannot upause - End of video reached ";
            lastError.second = 10;
            std::clog << "[INFO] Cannot upause - End of video reached " << std::endl;
+           mptrackerView->initInputVideoStream(invideofile);
+           std::clog << "[INFO] Rewinding-video " << std::endl;
         }
 
     }
@@ -516,7 +518,7 @@ bool trackerState::openDataFile()
           //Increase Seq Number And Reconstruct Name
             Vcnt++;
             // If postfix (track / food) already there, then just add new number
-            outcvsfilename = outdatafile.fileName().append(QString::number(Vcnt));
+            outcvsfilename = outdatafile.fileName().prepend(QString::number(Vcnt)+"_");
             outdatafile.setFileName(outcvsfilename );
             }
     }
