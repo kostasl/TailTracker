@@ -8,7 +8,7 @@ Window {
     width: 640
     height: 480
     color: "#729fcf"
-    title: qsTr("2p microscope camera tail tracker ")
+    title: qsTr("Tail tracker for 2p-microscope constrained larva videos")
     signal qmlSignal(string msg)
     onSceneGraphInitialized: busyIndicator.running = false;
 //    onContentItemChanged: {

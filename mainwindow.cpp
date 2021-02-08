@@ -94,5 +94,6 @@ bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
 
 mainwindow::~mainwindow()
 {
+
     //delete ptrackerState;
 }

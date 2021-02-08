@@ -1,4 +1,5 @@
 #include "trackerstate.h"
+#include "handler.h"
 
 using namespace std;
 
@@ -32,27 +33,6 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
         parser.printMessage();
         return;
     }
-
-    //Check if outdir provided otherwise open Dialog
-    if (parser.has("outputdir"))
-    {
-        std::string soutFolder   = parser.get<std::string>("outputdir");
-    }
-    else
-    {
-      // getting the filename (full path)
-
-      stroutFilename  = QFileDialog::getSaveFileName(nullptr, "Save tracks to output","VX_pos.csv", "CSV files (*.csv);", nullptr, nullptr);
-      stroutDir = stroutFilename.left(stroutFilename.lastIndexOf("/"));
-    }
-
-    if (!outdir.exists((stroutDir)))
-        outdir.mkdir((stroutDir));
-    outdir.setPath((stroutDir));
-
-    std::clog << "Output Data file : " << stroutFilename.toStdString() << std::endl;
-    //std::cout << "Output Data file : " << stroutFilename.toStdString()  << "\n " << std::endl;
-
 
  /// Check if vid file provided in arguments.
  /// If File exists added to video file list, otherwise save directory and open dialogue to choose a file from there
@@ -97,6 +77,24 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
             qWarning() << fvidfile.fileName() << " does not exist!";
         }
     }
+
+    //Check if outdir provided otherwise open Dialog
+    if (parser.has("outputdir"))
+    {
+        QString soutFolder = QString::fromStdString(parser.get<std::string>("outputdir"));
+        if (!outdir.exists((soutFolder)))
+            outdir.mkdir((soutFolder));
+    }
+    else
+    {
+      // getting the filename (full path)
+      stroutFilename  = QFileDialog::getSaveFileName(nullptr, "Save tracks to output",invideofile.dir().path() +"/"+ invideofile.dir().dirName().append(".csv"), "CSV files (*.csv);", nullptr, nullptr);
+      std::clog << "Output Data file : " << stroutFilename.toStdString() << std::endl;
+      outdir.setPath((stroutFilename));
+    }
+
+    outdatafile.setFileName(stroutFilename);
+    //std::cout << "Output Data file : " << stroutFilename.toStdString()  << "\n " << std::endl;
 
     /// Setup Output Log File //
     if ( parser.has("logtofile") )
@@ -206,6 +204,39 @@ trackerImageProvider* trackerState::ImageSequenceProvider() const
 {
     return (mptrackerView);
 }
+
+
+
+bool trackerState::saveFrameTrack(){
+
+    if (bPaused)
+        return (false);
+
+    const double Rad2Deg = (180.0/CV_PI);
+
+    QTextStream datStream(&outdatafile);
+
+    //for (auto it = h.pointStack.begin(); it != h.pointStack.end(); ++it)
+    datStream.setRealNumberNotation(QTextStream::RealNumberNotation::FixedNotation );
+    datStream.setRealNumberPrecision(2);
+
+    datStream << mptrackerView->getCurrentFrameNumber() <<"\t" << FishTailSpineSegmentLength*FishTailSpineSegmentCount << "\t";
+
+    //Set Global 1st Spine Direction (Helps to detect Errors)
+    assert(tailsplinefit.size() == FishTailSpineSegmentCount);
+
+    datStream << Rad2Deg* tailsplinefit[0].angleRad;
+    //Output Spine Point Angular Deviations from the previous spine/tail Segment in Degrees
+    for (int i=1;i<FishTailSpineSegmentCount;i++)
+    {
+       datStream << "\t" << Rad2Deg*(tailsplinefit[i-1].angleRad - tailsplinefit[i].angleRad);
+       // datStream << "\t" << Rad2Deg*angleBetween(cv::Point2f(tailsplinefit[i-1].x,tailsplinefit[i-1].y),  cv::Point2f(tailsplinefit[i].x,tailsplinefit[i].y));
+    }
+     datStream << "\n";
+
+     return(true);
+}
+
 
 void trackerState::processInputKey(char Key)
 {
@@ -379,8 +410,6 @@ void trackerState::initBGSubstraction()
 
 }
 
-
-
 /// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
 QFileInfo trackerState::getNextVideoFile()
 {
@@ -413,8 +442,8 @@ void trackerState::initSpine()
         splineKnotf sp;
         //1st Spine Is in Opposite Direction of Movement and We align 0 degrees to be upwards (vertical axis)
         //if (this->bearingRads > CV_PI)
-        if (fishBearingRads < 0)
-            fishBearingRads  += 2.0*CV_PI;
+//        if (fishBearingRads < 0)
+//            fishBearingRads  += 2.0*CV_PI;
 
             sp.angleRad    = (fishBearingRads)-CV_PI; //   //Spine Looks In Opposite Direction
             sp.spineSegLength = c_spineSegL;    //Default Size
@@ -451,4 +480,66 @@ void trackerState::initSpine()
        // drawSpine(frameDebugC);
        // cv::waitKey(300);
 
+}
+
+
+
+void trackerState::writeFishDataCSVHeader(QFile& data)
+{
+
+    /// Write Header //
+    QTextStream output(&data);
+    output << "frameN\ttailLengthpx\tThetaSpine_0\t";
+    for (int i=1;i<FishTailSpineSegmentCount;i++)
+        output <<  "DThetaSpine_" << i << "\t";
+
+    output << "\n";
+}
+
+
+bool trackerState::openDataFile()
+{
+    int Vcnt = 1;
+    bool newFile = false;
+    //Make ROI dependent File Name
+    QString outcvsfilename;
+    //data.setFileName(dirOutPath);
+    //Make Sure We do not Overwrite existing Data Files
+
+    while (!newFile)
+    {
+        if (!outdatafile.exists() || outdatafile.isOpen()) //Write HEader
+        {
+            newFile = true;
+        }else{ //File Exists
+            //Append Sequence Number to Output File name
+          //Increase Seq Number And Reconstruct Name
+            Vcnt++;
+            // If postfix (track / food) already there, then just add new number
+            outcvsfilename = outdatafile.fileName().append(QString::number(Vcnt));
+            outdatafile.setFileName(outcvsfilename );
+            }
+    }
+
+    /// Open File for Appending
+    if (!outdatafile.open(QFile::WriteOnly |QFile::Append))
+    {
+
+        std::cerr << "Could not open output file : " << outdatafile.fileName().toStdString() << std::endl;
+        return(false);
+    }else {
+        //New File
+        writeFishDataCSVHeader(outdatafile);
+        std::clog << "Create new file " << outdatafile.fileName().toStdString() << " for track data." << std::endl;
+    }
+
+    return (true);
+}
+
+void trackerState::closeDataFile()
+{
+    outdatafile.close();
+    std::clog << " Closed Output File " << outdatafile.fileName().toStdString() << std::endl;
+    lastError.first = QString(" Closed Output File :") + outdatafile.fileName();
+    lastError.second = 0;
 }

@@ -73,6 +73,10 @@ public:
     trackerImageProvider* ImageSequenceProvider() const;
     void processInputKey(char Key);
     t_tracker_error getLastError();
+    bool openDataFile();
+    void closeDataFile();
+    bool saveFrameTrack();
+
 
 public:
     bool bPaused     = true;
@@ -113,19 +117,22 @@ public:
     const int FitTailIntensityScanAngleDeg   = 35; //
     const int FishTailSpineSegmentCount      = 16;
     int FishTailSpineSegmentLength           = 9; //Length of Each Segment
-    double fishBearingRads                 = 45.0*CV_PI/180.0; //Larval Orientation
+    double fishBearingRads                 = 27.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default
     cv::Point ptTailRoot                   = cv::Point(122,48);
     int FitTailConfigState                 = 0; //A state Machine  register
 
     t_fishspline tailsplinefit; ///X-Y Coordinates of Fitted spline to contour
 
+
 protected:
     trackerImageProvider* mptrackerView; //pointer to external ImageSequence Provider
+    void writeFishDataCSVHeader(QFile& data);
 
 private:
     QDir outdir;
     QDir videodir;
     QFile outdatafile;
+
     QFileInfo invideofile;
     QStringList invidFileList; // List of video file names To process
     std::ofstream foutLog;//Used for Logging To File
@@ -143,7 +150,6 @@ private:
     cv::Mat kernelDilateMOGMask;
     cv::Mat kernelOpenfish;
     cv::Mat kernelClose;
-
 
 
 };

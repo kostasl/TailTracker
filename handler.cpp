@@ -11,19 +11,23 @@ using namespace cv;
 
 float angleBetween(const cv::Point2f &v1, const cv::Point2f &v2)
 {
-    float len1 = sqrt(v1.x * v1.x + v1.y * v1.y);
-    float len2 = sqrt(v2.x * v2.x + v2.y * v2.y);
 
-    float dot = v1.x * v2.x + v1.y * v2.y;
+    // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+    return(std::atan2(v1.y-v2.y,v1.x-v2.x)); //+CV_PI/2.0
 
-    float a = dot / (len1 * len2);
+//    float len1 = sqrt(v1.x * v1.x + v1.y * v1.y);
+//    float len2 = sqrt(v2.x * v2.x + v2.y * v2.y);
 
-    if (a >= 1.0)
-        return 0.0;
-    else if (a <= -1.0)
-        return CV_PI;
-    else
-        return acos(a); // 0..PI
+//    float dot = v1.x * v2.x + v1.y * v2.y;
+
+//    float a = dot / (len1 * len2);
+
+//    if (a >= 1.0)
+//        return 0.0;
+//    else if (a <= -1.0)
+//        return CV_PI;
+//    else
+//        return acos(a); // 0..PI
 }
 
 
@@ -49,16 +53,17 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     trackerState.initInputVideoStream();
     t_tracker_error lastError = trackerState.getLastError();
     window_main.LogEvent(lastError.first,lastError.second);
-
-
     window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.ImageSequenceProvider()->getTotalFrames() ),5 );
     window_main.LogEvent(QString("Calculating Background image"),10 );
     window_main.setBusyOn();
     trackerState.initBGSubstraction();
     window_main.setBusyOff();
 
-    //Once BG Donw, Rewind Video
+     //Once BG Donw, Rewind Video
     trackerState.ImageSequenceProvider()->setCurrentFrameNumber(trackerState.startFrame);
+
+    /// Open Data File
+    trackerState.openDataFile();
 
     //read input data. ESC or 'q' for quitting
     while(!trackerState.bExiting && !trackerState.atLastFrame())
@@ -140,9 +145,11 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         /// Secondary Method Uses Optic Flow
         if (trackerState.FitTailConfigState == 0)
         {
-            trackerState.tailsplinefit = fitSpineToIntensity(frame_denoise,trackerState,trackerState.tailsplinefit);
-            trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
+            //trackerState.tailsplinefit = fitSpineToIntensity(frame_denoise,trackerState,trackerState.tailsplinefit);
+            //trackTailOpticFlow(frame_denoise,lastframe,trackerState.tailsplinefit,nFrame,trackerState.tailsplinefit);
             drawSpine(outframe,trackerState,trackerState.tailsplinefit );
+
+            trackerState.saveFrameTrack();
         }
 
         if (trackerState.FitTailConfigState == 1) //Making The Arrow
@@ -179,6 +186,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
          QCoreApplication::processEvents(QEventLoop::AllEvents);
      }/// Main While - Reading Frames Loop
 
+    trackerState.closeDataFile();
 
     return (trackerState.ImageSequenceProvider()->getCurrentFrameNumber());
 }
@@ -207,6 +215,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
 t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerState,t_fishspline spline){
 
+    const double Rad2Deg = (180.0/CV_PI);
     const size_t AP_N= trackerState.FishTailSpineSegmentCount;
     const int step_size = trackerState.FishTailSpineSegmentLength;
     const int c_gain = 100;
@@ -224,7 +233,7 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
     { //Loop Through Spine Points
         ellipse_pts.clear();
 
-        angle = spline[k-1].angleRad/CV_PI*180.0-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
+        angle = spline[k-1].angleRad*Rad2Deg-90.0; //Get Angle In Degrees for Arc Drawing Tranlated Back to 0 horizontal
         //Construct Elliptical Circle around last Spine Point - of Radius step_size
         cv::ellipse2Poly(cv::Point(spline[k-1].x,spline[k-1].y),
                 cv::Size(step_size,step_size), 0, angle-trackerState.FitTailIntensityScanAngleDeg, angle+trackerState.FitTailIntensityScanAngleDeg, 1, ellipse_pts);
@@ -263,10 +272,10 @@ t_fishspline fitSpineToIntensity(cv::Mat &frameimg_Blur,trackerState& trackerSta
         spline[k].y     = ellipse_pts[iMaxIdx].y;
         /// Get Arc tan and Translate back to 0 being the Vertical Axis
         if (k==1) //1st point Always points in the opposite direction of the body
-            spline[k-1].angleRad    = (trackerState.fishBearingRads)-CV_PI;// ; //  //Spine Looks In Opposite Direction
+            spline[k-1].angleRad    = (-(trackerState.fishBearingRads));// ; //  //Spine Looks In Opposite Direction
         else
-            //angleBetween(cv::Point(spline[k].y,spline[k].x),cv::Point(spline[k-1].y,spline[k-1].x))+CV_PI/2.0;
-            spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
+            spline[k-1].angleRad = angleBetween(cv::Point(spline[k].y,spline[k].x),cv::Point(spline[k-1].y,spline[k-1].x));
+            //spline[k-1].angleRad = std::atan2(spline[k].y-spline[k-1].y,spline[k].x-spline[k-1].x)+CV_PI/2.0; // ReCalc Angle in 0 - 2PI range Of previous Spline POint to this New One
 
         //Set Next point Angle To follow this one - Otherwise Large deviation Spline
         if (k < AP_N)
@@ -356,7 +365,7 @@ void drawSpine(cv::Mat& outFrame,trackerState& trackerState,t_fishspline& spline
         //else
         cv::circle(outFrame,cv::Point(spline[j].x,spline[j].y),2,CV_RGB(100,100,100),1);
 
-        //Connect Spine Points
+        // Connect Spine Points
         cv::line(outFrame,cv::Point(spline[j].x,spline[j].y),
                  cv::Point(spline[j+1].x,spline[j+1].y),CV_RGB(120,120,0),1);
 

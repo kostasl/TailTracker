@@ -122,7 +122,9 @@ uint trackerImageProvider::getTotalFrames(){
 uint trackerImageProvider::endFrameNumber(){
 
     if (imageSequenceFiles.count() > 0)
-           endFrame = imageSequenceFiles.last().baseName().toInt();
+         endFrame = imageSequenceFiles.last().baseName().toInt();
+    else
+         endFrame = getTotalFrames();
 
 return (endFrame);
 }
@@ -141,11 +143,14 @@ uint trackerImageProvider::getCurrentFrameNumber(){
 
 void trackerImageProvider::setCurrentFrameNumber(uint nFrame)
 {
+    QStringList filters;
+    filters << "*." + videoFile.suffix();
+
     if (inputSourceMode == sourceVideoTypes::VideoFile)
         pcvcapture->set(CV_CAP_PROP_POS_FRAMES,nFrame);
     else{
         ///Reload Image File List
-        imageSequenceFiles  = videoFile.dir().entryInfoList(QDir::Filter::Files);
+        imageSequenceFiles  = videoFile.dir().entryInfoList(filters,QDir::Filter::Files);
         ///Scan for Desired Current Frame
         while (imageSequenceFiles.count() > 0)
         {   //Search for Frame Number in File Name
@@ -214,9 +219,12 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
     //OPEN IMAGE SEQUENCE
     if (videoFile.suffix() == "pgm" || videoFile.suffix() == "tiff" )
     {
+        QStringList filters;
+        filters << "*." + videoFile.suffix();
+
         inputSourceMode = sourceVideoTypes::ImageSequence;
         videoFile.dir().setSorting(QDir::SortFlag::Name);
-        imageSequenceFiles  = videoFile.dir().entryInfoList(QDir::Filter::Files);
+        imageSequenceFiles  = videoFile.dir().entryInfoList(filters,QDir::Filter::Files);
         videoFile           = imageSequenceFiles.first();
 
         QString filenamePatt = QString("/%") + (QString::number(videoFile.baseName().length())) + "d." + videoFile .suffix();

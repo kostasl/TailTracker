@@ -56,6 +56,7 @@ int main(int argc, char* argv[]){
     engine.load(mainwindow_url);
 
 
+
      // To make a new window Instance:
     //QQmlComponent mainWindow(&engine,url);
    // QObject *mainW = mainWindow.create();
@@ -120,100 +121,21 @@ int main(int argc, char* argv[]){
     if(oTrackerstate.bExiting)
     {
         omeanWindow.LogEvent("Goodbye!",0);
+        cv::destroyAllWindows();
+
         app.quit();
+        engine.quit();
+        engine.exit(EXIT_SUCCESS);
+        app.exit(EXIT_SUCCESS);
+
+
+        //exit(0);
+        //std::exit(EXIT_SUCCESS);
+        return EXIT_SUCCESS;
     }
+
    return app.exec();
 }
 
 
-
-void writeFishDataCSVHeader(QFile& data,trackerState& trackerState)
-{
-
-    /// Write Header //
-    QTextStream output(&data);
-    output << "frameN \t tailLengthpx \t ThetaSpine_0 \t ";
-    for (int i=1;i<trackerState.FishTailSpineSegmentCount;i++)
-        output <<  "DThetaSpine_" << i << "\t";
-
-    output << "\n";
-
-}
-
-
-bool openDataFile(QString filepathCSV,QString filenameVid,QFile& data,QString strpostfix,trackerState& trackerState,mainwindow& omeanWindow)
-{
-    int Vcnt = 1;
-    bool newFile = false;
-    //Make ROI dependent File Name
-    QFileInfo fiVid(filenameVid);
-    QFileInfo fiOut(filepathCSV+"/") ;
-    QString fileVidCoreName = fiVid.completeBaseName();
-    QString dirOutPath = fiOut.absolutePath() + "/"; //filenameCSV.left(filenameCSV.lastIndexOf("/")); //Get Output Directory
-
-    //strpostfix = strpostfix + "_%d.csv";
-
-
-    //char buff[50];
-    //sprintf(buff,strpostfix.toStdString(),Vcnt);
-    //dirOutPath.append(fileVidCoreName); //Append Vid Filename To Directory
-    //dirOutPath.append(buff); //Append extension track and ROI number
-    if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
-    {
-        fileVidCoreName = fileVidCoreName.left(fileVidCoreName.lastIndexOf("_"));
-        dirOutPath = dirOutPath + fileVidCoreName+ "_" + QString::number(Vcnt) +  ".csv";
-    }
-    else
-        dirOutPath = dirOutPath + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
-
-    data.setFileName(dirOutPath);
-    //Make Sure We do not Overwrite existing Data Files
-    while (!newFile)
-    {
-        if (!data.exists() || data.isOpen()) //Write HEader
-        {
-            newFile = true;
-        }else{
-            //File Exists
-            if (trackerState.bSkipExisting)
-            {
-                omeanWindow.LogEvent("[warning] Output File Exists and SkipExisting Mode is on.",3);
-                std::cerr << "Skipping Previously Tracked Video File" << std::endl;
-                return false; //File Exists Skip this Video
-            }
-            else
-            {
-                //- Create Name
-            //Filename Is Like AutoSet_12-10-17_WTNotFedRoti_154_002_tracks_1.csv
-                //Increase Seq Number And Reconstruct Name
-                Vcnt++;
-                // If postfix (track / food) already there, then just add new number
-                if (fileVidCoreName.contains(strpostfix,Qt::CaseSensitive))
-                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + "_" + QString::number(Vcnt) + ".csv";
-                else
-                    dirOutPath = fiOut.absolutePath() + "/" + fileVidCoreName + strpostfix + "_" + QString::number(Vcnt) + ".csv";
-
-
-
-                data.setFileName(dirOutPath);
-                //data.open(QFile::WriteOnly)
-
-            }
-         }
-    }
-    if (!data.open(QFile::WriteOnly |QFile::Append))
-    {
-        std::cerr << "Could not open output file : " << data.fileName().toStdString() << std::endl;
-        return false;
-    }else {
-        //New File
-        //if (!trackerState.bBlindSourceTracking)
-        std::clog << "Opened file " << dirOutPath.toStdString() << " for data logging." << std::endl;
-
-        //output.flush();
-
-    }
-
-    return true;
-}
 
