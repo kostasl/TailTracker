@@ -100,11 +100,14 @@ cv::Mat trackerImageProvider::getNextFrame()
 }
 
 bool trackerImageProvider::atFirstFrame(){
-    return(currentFrameNumber == 1);
+    return(currentFrameNumber == startFrame);
 }
 
 bool trackerImageProvider::atLastFrame(){
-    return(currentFrameNumber == (totalVideoFrames));
+    //Make sure Current Frame Does not exceed last frame number
+    currentFrameNumber = (currentFrameNumber>endFrame)?endFrame:currentFrameNumber;
+
+    return(currentFrameNumber == (endFrame));
 }
 
 // TODO: allow for stopping at user provided endFrame

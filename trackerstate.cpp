@@ -313,7 +313,7 @@ void trackerState::initBGSubstraction()
 
     int i = 0;
     //Get BGImage
-    while (mptrackerView->getCurrentFrameNumber() <= MOGhistory && (!atLastFrame()))
+    while (i < MOGhistory && (!atLastFrame()))
     {
         frame = mptrackerView->getNextFrame();
         lastError = mptrackerView->getLastError();
@@ -357,12 +357,15 @@ void trackerState::initBGSubstraction()
     }
     /// We Save the Minimum - ie 1st element - As the background - so any moving components are removed
     bgFrame = listImages[0]; //
+    assert(!bgFrame.empty());
+
    // For Debuging
    #ifdef _DEBUG
     cv::imshow("Median BG Model image",listImages[listImages.size() / 2]);
     cv::imshow("Lowest PX BG Model image",listImages[1]);
     cv::imshow("Highest PX BG Model image",listImages[listImages.size() -1]);
     #endif
+
 }
 
 
