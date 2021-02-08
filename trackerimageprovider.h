@@ -25,6 +25,13 @@
 
 typedef std::pair<QString,int> t_tracker_error;
 
+enum class sourceVideoTypes
+{
+    ImageSequence,
+    VideoFile,
+    ImageDirectory
+};
+
 class  trackerImageProvider : public QQuickImageProvider
 {
     //friend class trackerState; //So it can access members for frame
@@ -64,6 +71,7 @@ private:
     cv::Mat currentFrame;
    QPixmap pixmap;
    QFileInfo videoFile;
+   QFileInfoList imageSequenceFiles;
 
    cv::VideoCapture* pcvcapture;
 
@@ -72,13 +80,14 @@ protected:
     uint errorFrames = 0;
     float vidfps;
     uint totalVideoFrames;
-    uint currentFrameNumber; //The current frame number of tracking
+    uint startFrame = 0;
+    uint currentFrameNumber = 0; //The current frame number of tracking
 
     double contrastGain = 2.4;
     double brightness  = 25;
 
     bool bStartFrameChanged;
-
+    sourceVideoTypes inputSourceMode;
 };
 
 #endif // TRACKERIMAGEPROVIDER_H

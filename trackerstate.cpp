@@ -64,9 +64,11 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
         if (invideofile.exists() && invideofile.isFile())
             invidFileList.append( invideofile.filePath() );
     }else {
+        //QFileDialog::setFileMode(QFileDialog::Directory);
+
         if (invidFileList.empty())
-                invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos to Process", outdir.path() ,
-                                                              "Video file (*.mpg *.avi *.mp4 *.h264 *.mkv *.tiff *.png *.jpg *.pgm)", nullptr, nullptr);
+                invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos or images to process", outdir.path() ,
+                                                              "Image sequences (*.tiff *.png *.jpg *.pgm);;Video files (*.mpg *.avi *.mp4 *.h264 *.mkv)", nullptr, nullptr);
             //Retain ref to output directory
             videodir.setPath(invidFileList.first());
             invideofile = invidFileList.first();
@@ -251,6 +253,9 @@ int trackerState::initInputVideoStream()
 {
     QFileInfo videoFile = getNextVideoFile();
 
+    if (videoFile.isDir())
+       std::clog << "Reading image files from " << videoFile.path().toStdString() << std::endl;
+
     int ret = mptrackerView->initInputVideoStream(videoFile);
     lastError = mptrackerView->getLastError();
 
@@ -286,6 +291,10 @@ int trackerState::initInputVideoStream()
 /// \brief Initialize BG substractor objects, depending on options / can use cuda
 void trackerState::initBGSubstraction()
 {
+
+    //Cap Number of BG training Frames To not exceed number of available frames
+    MOGhistory = (mptrackerView->getTotalFrames() < MOGhistory)?mptrackerView->getTotalFrames():MOGhistory;
+
     std::vector<cv::Mat> listImages(MOGhistory);
 
     bPaused = false;
@@ -306,7 +315,12 @@ void trackerState::initBGSubstraction()
     while (mptrackerView->getCurrentFrameNumber() <= MOGhistory && (!atLastFrame()))
     {
         frame = mptrackerView->getNextFrame();
-
+        lastError = mptrackerView->getLastError();
+        if (lastError.second < 5);
+        {
+            std::clog << lastError.first.toStdString() << std::endl;
+            continue;
+        }
         //LearningRate Negative parameter value makes the algorithm to use some automatically chosen learning rate
         pBGsubmodel->apply(frame,fgMask,MOGLearningRate);
         pBGsubmodel->getBackgroundImage(listImages[i++]);

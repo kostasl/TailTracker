@@ -9,6 +9,17 @@ cv::Mat trackerImageProvider::getNextFrame()
      try //Try To Read The Image of that video Frame
     {
         //read the current frame
+        if (inputSourceMode == sourceVideoTypes::ImageSequence)
+        {
+            //Check if more file  available /If We have not emptied the file list of files
+
+            if (imageSequenceFiles.count() > 0){
+                pcvcapture->open(imageSequenceFiles.first().filePath().toStdString());
+                std::clog << imageSequenceFiles.first().filePath().toStdString() <<std::endl;
+                imageSequenceFiles.pop_front();
+            }
+        }
+
         if(!pcvcapture->read(nextFrame))
         {
             if (atFirstFrame())
@@ -25,14 +36,12 @@ cv::Mat trackerImageProvider::getNextFrame()
             }
             else //Not Stuck On 1st Frame / Maybe Vid Is Over?>
             {
-                lastError.first = "[Error]  Unable to read first frame.";
-                lastError.second = 2;
                if (!atLastFrame())
                {
                    //window_main.LogEvent("[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked",3);
                    //removeDataFile(outdatafile); //Delete The Output File
-                   lastError.first = "[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked";
-                   lastError.second = 3;
+                   lastError.first = "[Error] Failed to read frame " + QString::number(currentFrameNumber);
+                   lastError.second = 2;
                }
                else { ///Reached last Frame Video Done
                    //window_main.LogEvent(" [info] processVideo loop done!",5);
@@ -88,11 +97,14 @@ cv::Mat trackerImageProvider::getNextFrame()
 bool trackerImageProvider::atFirstFrame(){
     return(currentFrameNumber == 1);
 }
+
 bool trackerImageProvider::atLastFrame(){
-
+    return(currentFrameNumber == totalVideoFrames-1);
 }
-bool trackerImageProvider::atStopFrame(){
 
+// TODO: allow for stopping at user provided endFrame
+bool trackerImageProvider::atStopFrame(){
+    return(currentFrameNumber == totalVideoFrames-1);
 }
 
 uint trackerImageProvider::getTotalFrames(){
@@ -101,7 +113,9 @@ uint trackerImageProvider::getTotalFrames(){
 
 uint trackerImageProvider::getCurrentFrameNumber(){
 
-    currentFrameNumber = pcvcapture->get(CV_CAP_PROP_POS_FRAMES);
+    if (inputSourceMode == sourceVideoTypes::VideoFile) //Ony for Videos attempt to update FrameNumber
+        currentFrameNumber = pcvcapture->get(CV_CAP_PROP_POS_FRAMES);
+
     return(currentFrameNumber);
 }
 
@@ -163,8 +177,48 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
         ret = 1;
     }
 
+    //OPEN IMAGE SEQUENCE
+    if (videoFile.suffix() == "pgm" || videoFile.suffix() == "tiff" )
+    {
+        inputSourceMode = sourceVideoTypes::ImageSequence;
+        videoFile.dir().setSorting(QDir::SortFlag::Name);
+        imageSequenceFiles  = videoFile.dir().entryInfoList();
+        videoFile           = imageSequenceFiles.first();
+
+        QString filenamePatt = QString("/%") + (QString::number(videoFile.baseName().length())) + "d." + videoFile .suffix();
+        std::string cvFilePattern = QString(videoFile.path() + filenamePatt).toStdString();
+
+        //This is likely to fail as we do not start from 0
+        std::clog << "Attempting to open image sequence " << cvFilePattern << std::endl;
+
+        pcvcapture = new cv::VideoCapture( videoFile.filePath().toStdString() );
+        startFrame = ( videoFile.baseName().toInt() );
+        currentFrameNumber =startFrame;
+
+        pcvcapture->open(cvFilePattern);
+        pcvcapture->set(CV_CAP_PROP_POS_FRAMES, currentFrameNumber );
+
+        if(!pcvcapture->isOpened())
+        {
+            //error in opening the video input
+            lastError.first = "[ERROR] Failed to open images ";
+            lastError.second = 1;
+            ret = 0;
+        }else{
+            lastError.first = "[INFO] image sequence started";
+            lastError.second = 10;
+            ret = 1;
+        }
+
+        vidfps = 470;
+        totalVideoFrames =  videoFile.dir().count();
+
+     }//If File Sequence
+
+    /// Open Single video file
     if (videoFile.suffix() == "avi" || videoFile.suffix() == "mp4" || videoFile.suffix() == "mkv")
     {
+        inputSourceMode = sourceVideoTypes::VideoFile;
         std::clog << "Attempting to open video file " << videoFile.fileName().toStdString() << std::endl;
 
         pcvcapture = new cv::VideoCapture(videoFile.filePath().toStdString());
@@ -181,11 +235,10 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
         }
 
         vidfps = (pcvcapture->get(CV_CAP_PROP_FPS) );
-        totalVideoFrames =  (pcvcapture->get(CV_CAP_PROP_FRAME_COUNT));
+        totalVideoFrames = (pcvcapture->get(CV_CAP_PROP_FRAME_COUNT) );
+    }//If Video File
 
-      }//If File is a video
-
-    return (ret);
+ return (ret);
 }
 
 void trackerImageProvider::setNextFrame(QPixmap frm)
