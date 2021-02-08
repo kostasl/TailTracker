@@ -256,14 +256,15 @@ int trackerState::initInputVideoStream()
     if (videoFile.isDir())
        std::clog << "Reading image files from " << videoFile.path().toStdString() << std::endl;
 
-    int ret = mptrackerView->initInputVideoStream(videoFile);
-    lastError = mptrackerView->getLastError();
+    int ret    = mptrackerView->initInputVideoStream(videoFile);
+    startFrame = mptrackerView->startFrame;
+    lastError  = mptrackerView->getLastError();
 
     //move to requested start frame
     mptrackerView->setCurrentFrameNumber(startFrame);
 
     if (endFrame == 0) //If User has not set Stop Point- Set it to end of video
-        endFrame =  mptrackerView->getTotalFrames();
+        endFrame =  mptrackerView->endFrameNumber();
 
     assert(startFrame < endFrame);
 

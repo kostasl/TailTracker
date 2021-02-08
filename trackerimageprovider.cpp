@@ -21,7 +21,7 @@ cv::Mat trackerImageProvider::getNextFrame()
         }
 
         if(!pcvcapture->read(nextFrame))
-        {
+        {/// Frame - Can't Read Next Frame
             if (atFirstFrame())
             {
                 //window_main.LogEvent("# [Error]  Unable to read first frame.",2);
@@ -29,7 +29,7 @@ cv::Mat trackerImageProvider::getNextFrame()
                 lastError.second = 2;
                 currentFrameNumber = 0; //Signals To caller that video could not be loaded.
 
-                setCurrentFrameNumber(currentFrameNumber+1); //Skip
+                setCurrentFrameNumber(currentFrameNumber+1); //Skip Frame
                 //Delete the Track File //
                 //removeDataFile(outdatafile);
                 //exit(EXIT_FAILURE);
@@ -40,20 +40,24 @@ cv::Mat trackerImageProvider::getNextFrame()
                {
                    //window_main.LogEvent("[Error] Stopped Tracking before End of Video - Delete Data File To Signal its Not tracked",3);
                    //removeDataFile(outdatafile); //Delete The Output File
-                   lastError.first = "[Error] Failed to read frame " + QString::number(currentFrameNumber);
+                   lastError.first = "[Error] Failed to read frame " + QString::number(currentFrameNumber) + ".Skipping";
                    lastError.second = 2;
+                   setCurrentFrameNumber(currentFrameNumber+1); //Skip Frame
                }
                else { ///Reached last Frame Video Done
                    //window_main.LogEvent(" [info] processVideo loop done!",5);
                    lastError.first = "[INFO] processVideo loop done!";
                    lastError.second = 5;
                    //::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
+                   totalVideoFrames = currentFrameNumber;
+                   assert(atLastFrame());
                }
                //continue;
            }
-        }else /// ERROR Reading Frame - Can't Read Next Frame
+        }else //Frame read Returned ok
             currentFrameNumber++;
-    }catch(const std::exception &e)
+
+    }catch(const std::exception &e) //Error Handling
     {
 
         //window_main.LogEvent(QString(e.what()) + QString(" [Error]  reading frame. Skipping."),2);
@@ -90,6 +94,7 @@ cv::Mat trackerImageProvider::getNextFrame()
     //Set It Internally So View is updated
     setNextFrame(nextFrame);
 
+
     return(nextFrame);
 
 }
@@ -99,22 +104,33 @@ bool trackerImageProvider::atFirstFrame(){
 }
 
 bool trackerImageProvider::atLastFrame(){
-    return(currentFrameNumber == totalVideoFrames-1);
+    return(currentFrameNumber == (totalVideoFrames));
 }
 
 // TODO: allow for stopping at user provided endFrame
 bool trackerImageProvider::atStopFrame(){
-    return(currentFrameNumber == totalVideoFrames-1);
+    return(currentFrameNumber == (totalVideoFrames));
 }
 
 uint trackerImageProvider::getTotalFrames(){
  return(totalVideoFrames);
 }
 
+uint trackerImageProvider::endFrameNumber(){
+
+    if (imageSequenceFiles.count() > 0)
+           endFrame = imageSequenceFiles.last().baseName().toInt();
+
+return (endFrame);
+}
+
+
 uint trackerImageProvider::getCurrentFrameNumber(){
 
     if (inputSourceMode == sourceVideoTypes::VideoFile) //Ony for Videos attempt to update FrameNumber
         currentFrameNumber = pcvcapture->get(CV_CAP_PROP_POS_FRAMES);
+    else if (imageSequenceFiles.count() > 0)
+        currentFrameNumber = imageSequenceFiles.first().baseName().toInt();
 
     return(currentFrameNumber);
 }
@@ -122,7 +138,21 @@ uint trackerImageProvider::getCurrentFrameNumber(){
 
 void trackerImageProvider::setCurrentFrameNumber(uint nFrame)
 {
-    pcvcapture->set(CV_CAP_PROP_POS_FRAMES,nFrame);
+    if (inputSourceMode == sourceVideoTypes::VideoFile)
+        pcvcapture->set(CV_CAP_PROP_POS_FRAMES,nFrame);
+    else{
+        ///Reload Image File List
+        imageSequenceFiles  = videoFile.dir().entryInfoList(QDir::Filter::Files);
+        ///Scan for Desired Current Frame
+        while (imageSequenceFiles.count() > 0)
+        {   //Search for Frame Number in File Name
+            if (imageSequenceFiles.first().baseName().toInt() == nFrame)
+                break; //Found File With Set frame Number
+            else
+                imageSequenceFiles.pop_front();
+        }//While desired filename with nFrame number has not been found
+    }
+
     currentFrameNumber = nFrame;
 }
 
@@ -182,7 +212,7 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
     {
         inputSourceMode = sourceVideoTypes::ImageSequence;
         videoFile.dir().setSorting(QDir::SortFlag::Name);
-        imageSequenceFiles  = videoFile.dir().entryInfoList();
+        imageSequenceFiles  = videoFile.dir().entryInfoList(QDir::Filter::Files);
         videoFile           = imageSequenceFiles.first();
 
         QString filenamePatt = QString("/%") + (QString::number(videoFile.baseName().length())) + "d." + videoFile .suffix();

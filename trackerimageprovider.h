@@ -57,6 +57,7 @@ public:
     cv::Mat getCurrentFrame();
     uint getTotalFrames();
     uint getCurrentFrameNumber();
+    uint endFrameNumber(); //Use Image Sequence file names to obtain last Frame Number
     void setCurrentFrameNumber(uint nFrame);
     int initInputVideoStream(QFileInfo videofile);
     int initInputVideoStream(QString filename);
@@ -65,7 +66,8 @@ public:
 
 
     t_tracker_error lastError; //Holds data on the last error from the last function call of this object
-
+    uint startFrame = 0;
+    uint endFrame = 0;
 
 private:
     cv::Mat currentFrame;
@@ -80,7 +82,7 @@ protected:
     uint errorFrames = 0;
     float vidfps;
     uint totalVideoFrames;
-    uint startFrame = 0;
+
     uint currentFrameNumber = 0; //The current frame number of tracking
 
     double contrastGain = 2.4;

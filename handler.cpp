@@ -57,6 +57,9 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     trackerState.initBGSubstraction();
     window_main.setBusyOff();
 
+    //Once BG Donw, Rewind Video
+    trackerState.ImageSequenceProvider()->setCurrentFrameNumber(trackerState.startFrame);
+
     //read input data. ESC or 'q' for quitting
     while(!trackerState.bExiting && !trackerState.atLastFrame())
     {
