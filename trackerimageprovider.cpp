@@ -15,21 +15,23 @@ cv::Mat trackerImageProvider::getNextFrame()
 
             if (imageSequenceFiles.count() > 0){
                 pcvcapture->open(imageSequenceFiles.first().filePath().toStdString());
-                std::clog << imageSequenceFiles.first().filePath().toStdString() <<std::endl;
+                currentFrameNumber = imageSequenceFiles.first().baseName().toInt();
+                std::clog << imageSequenceFiles.first().filePath().toStdString() << std::endl;
                 imageSequenceFiles.pop_front();
+
             }
         }
 
         if(!pcvcapture->read(nextFrame))
-        {/// Frame - Can't Read Next Frame
+        {  /// Frame - Can't Read Next Frame
             if (atFirstFrame())
             {
                 //window_main.LogEvent("# [Error]  Unable to read first frame.",2);
                 lastError.first = "[ERROR]  Unable to read first frame.";
                 lastError.second = 2;
-                currentFrameNumber = 0; //Signals To caller that video could not be loaded.
+                //currentFrameNumber = startFrame; //Signals To caller that video could not be loaded.
 
-                setCurrentFrameNumber(currentFrameNumber+1); //Skip Frame
+                //setCurrentFrameNumber(currentFrameNumber+1); //No Need - Skipped Automatically by read(nextFrame) (For vids)
                 //Delete the Track File //
                 //removeDataFile(outdatafile);
                 //exit(EXIT_FAILURE);
@@ -47,15 +49,15 @@ cv::Mat trackerImageProvider::getNextFrame()
                else { ///Reached last Frame Video Done
                    //window_main.LogEvent(" [info] processVideo loop done!",5);
                    lastError.first = "[INFO] processVideo loop done!";
-                   lastError.second = 5;
+                   lastError.second = 0;
                    //::saveImage(frameNumberString,QString::fromStdString( gTrackerState.gstroutDirCSV),videoFilename,outframe);
                    totalVideoFrames = currentFrameNumber;
                    assert(atLastFrame());
                }
                //continue;
            }
-        }else //Frame read Returned ok
-            currentFrameNumber++;
+        }//else //Frame read Returned ok
+            //currentFrameNumber++;
 
     }catch(const std::exception &e) //Error Handling
     {
@@ -73,7 +75,7 @@ cv::Mat trackerImageProvider::getNextFrame()
         {
             // Too Many Error / Fail On Tracking
             lastError.first = "[ERROR]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure";
-            lastError.second = 5;
+            lastError.second = 1;
              //window_main.LogEvent("[ERROR]  Problem with Tracking Too Many Read Frame Errors - Stopping Here and Deleting Data File To Signal Failure",1);
             //removeDataFile(outdatafile);
         }
@@ -86,14 +88,12 @@ cv::Mat trackerImageProvider::getNextFrame()
         /// Do Simple Brightness Contrast Transform //
         // Change Brightness Contrast
         nextFrame.convertTo(nextFrame, -1, contrastGain, brightness);
-        //nextFrame = frame_BCTrans;
-
         nextFrame.copyTo(currentFrame);
-    }
+    }else
+        currentFrame.copyTo(nextFrame);
 
     //Set It Internally So View is updated
     setNextFrame(nextFrame);
-
 
     return(nextFrame);
 
@@ -181,7 +181,8 @@ t_tracker_error trackerImageProvider::getLastError()
   t_tracker_error tmp_lastError = lastError;
   //Once Last is Retrieved,  Set next Error To OK
   lastError.first = "OK";
-  lastError.second = 10; //Lowest Priority
+  lastError.second = 0; //No Error
+
   return(tmp_lastError);
 }
 
@@ -244,7 +245,7 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
         }
 
         vidfps = 470;
-        totalVideoFrames =  videoFile.dir().count();
+        totalVideoFrames =  imageSequenceFiles.count();
 
      }//If File Sequence
 

@@ -67,17 +67,16 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         // 1st Check If user changed Frame - and go to that frame
         nFrame = trackerState.ImageSequenceProvider()->getCurrentFrameNumber();
 
-
-
-        //if (trackerState.bPaused || trackerState.bStartFrameChanged)
-        //    continue;
-     //        trackerState.bStartFrameChanged = false; //Reset
-
+        /// Get Next Frame Image from source
         frame = trackerState.getNextFrame();
-        if (frame.empty())
+        t_tracker_error lastError = trackerState.getLastError();
+        if (lastError.second != 0) //Check If Critical Error- Break from loop
         {
-            t_tracker_error lastError = trackerState.getLastError();
             window_main.LogEvent(lastError.first,lastError.second);
+            if (lastError.second == 1)
+                break;
+            else
+                continue;
         }
 
         //Update Frame Index
@@ -88,7 +87,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         if (trackerState.atStopFrame() && !trackerState.bPaused)
         {
              trackerState.bPaused = true; //Stop Here
-             window_main.LogEvent(QString(">>Stop Frame Reached - Video Paused<<"),5);
+             window_main.LogEvent(QString(">> Stop Frame Reached - Video Paused <<"),5);
         }
 
          //Pause on 1st Frame If Flag Start Paused is set

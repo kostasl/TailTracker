@@ -9,8 +9,8 @@ trackerState::trackerState()
 }
 trackerState::~trackerState()
 {
-    if (pcvcapture)
-        delete pcvcapture;
+    //if (pcvcapture)
+    //    delete pcvcapture;
     kernelOpen.release();
     kernelDilateMOGMask.release();
     kernelOpenfish.release();
@@ -77,6 +77,7 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
 
     if (parser.has("invideolist"))
     {
+
         qDebug() << "Load Video File List " <<  QString::fromStdString(parser.get<std::string>("invideolist"));
         QFile fvidfile( QString::fromStdString(parser.get<std::string>("invideolist")) );
         if (fvidfile.exists())
@@ -165,7 +166,6 @@ void trackerState::setCurrentFrameNumber(uint nFrame)
 cv::Mat  trackerState::getNextFrame()
 {
 
-
     cv::Mat nextFrame;
 
     //Return Last Captured Frame
@@ -234,7 +234,14 @@ void trackerState::processInputKey(char Key)
 
     case 'R':
     case 'r':
-        bPaused = false;
+        if (!atLastFrame())
+            bPaused = false;
+        else
+        {
+           lastError.first = "[INFO] Cannot upause - End of video reached ";
+           lastError.second = 10;
+           std::clog << "[INFO] Cannot upause - End of video reached " << std::endl;
+        }
 
     }
 }
@@ -244,7 +251,7 @@ t_tracker_error trackerState::getLastError()
 {
   t_tracker_error tmp_lastError = lastError;
   lastError.first = "OK";
-  lastError.second = 10; //Lowest Priority
+  lastError.second = 0; //No Error
   return(tmp_lastError);
 }
 
@@ -295,6 +302,7 @@ void trackerState::initBGSubstraction()
 
     //Cap Number of BG training Frames To not exceed number of available frames
     MOGhistory = (mptrackerView->getTotalFrames() < MOGhistory)?mptrackerView->getTotalFrames():MOGhistory;
+    MOGLearningRate = max(MOGLearningRate,5.0/MOGhistory); //Adjust Learning Rate To Number of Available Frames
 
     std::vector<cv::Mat> listImages(MOGhistory);
 
@@ -317,7 +325,7 @@ void trackerState::initBGSubstraction()
     {
         frame = mptrackerView->getNextFrame();
         lastError = mptrackerView->getLastError();
-        if (lastError.second < 5);
+        if (lastError.second != 0) //Check for Error
         {
             std::clog << lastError.first.toStdString() << std::endl;
             continue;
@@ -326,11 +334,13 @@ void trackerState::initBGSubstraction()
         pBGsubmodel->apply(frame,fgMask,MOGLearningRate);
         pBGsubmodel->getBackgroundImage(listImages[i++]);
         //cv::imshow("fg MAsk Learning",fgMask);
-        cv::imshow("BG Model Learning",listImages[i-1]);
-
+        //Show Frame Being Processed
+        mptrackerView->setNextFrame(listImages[i-1]);
         QCoreApplication::processEvents(QEventLoop::AllEvents);
     }
-    setCurrentFrameNumber(1); //Reset To First Frame
+
+    setCurrentFrameNumber(startFrame); //Reset To First Frame
+
     //Make Learning Nominal
     MOGLearningRate = MOGNominamLearningRate; //Back to Nominal Rate - So Almost no Learning Happens
     bPaused = bStartPaused;
@@ -360,6 +370,7 @@ void trackerState::initBGSubstraction()
     assert(!bgFrame.empty());
 
    // For Debuging
+    cv::imshow("BG Model",listImages[1]);
    #ifdef _DEBUG
     cv::imshow("Median BG Model image",listImages[listImages.size() / 2]);
     cv::imshow("Lowest PX BG Model image",listImages[1]);

@@ -117,6 +117,11 @@ int main(int argc, char* argv[]){
 
     processVideo(omeanWindow,oTrackerstate);
 
+    if(oTrackerstate.bExiting)
+    {
+        omeanWindow.LogEvent("Goodbye!",0);
+        app.quit();
+    }
    return app.exec();
 }
 
