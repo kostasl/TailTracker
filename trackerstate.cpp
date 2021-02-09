@@ -518,7 +518,8 @@ bool trackerState::openDataFile()
           //Increase Seq Number And Reconstruct Name
             Vcnt++;
             // If postfix (track / food) already there, then just add new number
-            outcvsfilename = outdatafile.fileName().prepend(QString::number(Vcnt)+"_");
+            QFileInfo outInfo(outdatafile);
+            outcvsfilename = outInfo.path() + "/" + outInfo.baseName().append("_"+QString::number(Vcnt) + "." + outInfo.suffix() ) ;
             outdatafile.setFileName(outcvsfilename );
             }
     }
