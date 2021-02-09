@@ -88,8 +88,8 @@ bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
          qDebug() << "KeyPress:" << strkey;
 
          ptrackerState->processInputKey(keyEvent->key());
-         if (ptrackerState->bExiting)
-             std::exit(EXIT_SUCCESS);
+         //if (ptrackerState->bExiting)
+             //std::exit(EXIT_SUCCESS);
 
       }
 

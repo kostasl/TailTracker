@@ -50,8 +50,18 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 
-## ApplicationImage
+## Application Image creation - I followed these steps
+
+# export LD_LIBRARY_PATH=/opt/Qt/5.12.0/gcc_64/lib <- Not sure necessary in the end
+# export QT_PLUGIN_PATH=/usr/lib/qt/plugins <- Not sure necessary in the end
+
 # /opt/Qt/5.12.0/gcc_64/bin/qmake /home/kostasl/workspace/2pTailTracker/2pTailTracker.pro -spec linux-g++ CONFIG+=qtquickcompiler
 # make
 # make install INSTALL_ROOT=bin/AppDir
-# ./linuxdeploy-x86_64.AppImage --appdir ../workspace/2pTailTracker/bin/AppDir/ --plugin qt --output appimage
+# ./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/opt/2pTailTracker/bin/2pTailTracker -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake -appimage  -extra-plugins=iconengines,platformthemes/libqgtk3.so
+## delete Unnecessary build files
+# find build-*-*_Qt_* \( -name "moc_*" -or -name "*.o" -or -name "qrc_*" -or -name "Makefile*" -or -name "*.a" \) -exec rm {} \;
+
+### ./linuxdeploy-x86_64.AppImage --appdir ../workspace/2pTailTracker/bin/AppDir/ --plugin qt --output appimage
+### ./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/ -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake
+
