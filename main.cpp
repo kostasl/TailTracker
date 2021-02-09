@@ -43,6 +43,7 @@ using namespace cv;
 int main(int argc, char* argv[]){
 
 
+
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
     QApplication app(argc, argv);
 
@@ -55,7 +56,7 @@ int main(int argc, char* argv[]){
     }, Qt::QueuedConnection);
     engine.load(mainwindow_url);
 
-
+    QGuiApplication::setQuitOnLastWindowClosed(true);
 
      // To make a new window Instance:
     //QQmlComponent mainWindow(&engine,url);

@@ -4,8 +4,8 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
 {
       // Get Form Object Pointers And Connect Signaling slots
 
-     QObject*  oWindow = engine.rootObjects().first();
-     qWindow = oWindow->findChild<QQuickWindow*>(QString("mainWindow") );
+     oWindow = engine.rootObjects().first();
+     //qWindow = oWindow->findChild<QQuickWindow*>(QString("mainWindow") );
 
      QObject::connect((QObject*)oWindow  , SIGNAL(qmlSignal(QString)),
                       this, SLOT(cppSlot(QString)));
