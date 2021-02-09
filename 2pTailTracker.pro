@@ -50,3 +50,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 
+## ApplicationImage
+# /opt/Qt/5.12.0/gcc_64/bin/qmake /home/kostasl/workspace/2pTailTracker/2pTailTracker.pro -spec linux-g++ CONFIG+=qtquickcompiler
+# make
+# make install INSTALL_ROOT=bin/AppDir
+# ./linuxdeploy-x86_64.AppImage --appdir ../workspace/2pTailTracker/bin/AppDir/ --plugin qt --output appimage
