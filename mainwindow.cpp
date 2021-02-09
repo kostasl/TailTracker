@@ -3,9 +3,11 @@
 mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
 {
       // Get Form Object Pointers And Connect Signaling slots
-      QObject* oWindow = engine.rootObjects().first();
 
-     QObject::connect(oWindow  , SIGNAL(qmlSignal(QString)),
+     QObject*  oWindow = engine.rootObjects().first();
+     qWindow = oWindow->findChild<QQuickWindow*>(QString("mainWindow") );
+
+     QObject::connect((QObject*)oWindow  , SIGNAL(qmlSignal(QString)),
                       this, SLOT(cppSlot(QString)));
 
      oMouseArea = oWindow->findChild<QObject*>(QString("imgMouseArea"));
@@ -86,6 +88,8 @@ bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
          qDebug() << "KeyPress:" << strkey;
 
          ptrackerState->processInputKey(keyEvent->key());
+         if (ptrackerState->bExiting)
+             std::exit(EXIT_SUCCESS);
 
       }
 

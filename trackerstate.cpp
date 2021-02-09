@@ -250,6 +250,7 @@ void trackerState::processInputKey(char Key)
             bExiting = true;
             bTracking = false;
             bPaused = true;
+
             break;
 
     case 'T':

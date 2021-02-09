@@ -106,7 +106,7 @@ private :
     QObject* imgScene;
     QObject* oMouseArea; //Video frame Mouse Are
     QObject* busyIndicator;
-
+    QQuickWindow* qWindow;
     trackerState*  ptrackerState; //POinter to External instance of tracker state - Passed from Constructor
 };
 
