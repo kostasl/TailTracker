@@ -1,8 +1,12 @@
-TEMPLATE = app
-QT += widgets gui qml quick
+TEMPLATE = app TARGET = 2pTailTracker
+
+greaterThan(QT_MAJOR_VERSION, 4): QT += widgets
+QT += core gui qml quick
+QT += quickcontrols2
 
 CONFIG += c++11
 CONFIG += warn_off
+CONFIG+=qtquickcompiler
 
 QT_CONFIG -= no-pkg-config
 CONFIG += link_pkgconfig
@@ -58,10 +62,8 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 # /opt/Qt/5.12.0/gcc_64/bin/qmake /home/kostasl/workspace/2pTailTracker/2pTailTracker.pro -spec linux-g++ CONFIG+=qtquickcompiler
 # make
 # make install INSTALL_ROOT=bin/AppDir
-# ./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/opt/2pTailTracker/bin/2pTailTracker -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake -appimage  -extra-plugins=iconengines,platformthemes/libqgtk3.so
 ## delete Unnecessary build files
 # find build-*-*_Qt_* \( -name "moc_*" -or -name "*.o" -or -name "qrc_*" -or -name "Makefile*" -or -name "*.a" \) -exec rm {} \;
+#./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/opt/2pTailTracker/bin/2pTailTracker -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake -appimage  -extra-plugins=iconengines,platformthemes/libqgtk3.so -qmldir=../workspace/2pTailTracker/ -verbose=3
 
-### ./linuxdeploy-x86_64.AppImage --appdir ../workspace/2pTailTracker/bin/AppDir/ --plugin qt --output appimage
-### ./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/ -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake
 

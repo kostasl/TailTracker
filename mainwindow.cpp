@@ -6,6 +6,8 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
 
      oWindow = engine.rootObjects().first();
      //qWindow = oWindow->findChild<QQuickWindow*>(QString("mainWindow") );
+    if (!oWindow)
+        throw("mainwindow Failed to obtain root object!");
 
      QObject::connect((QObject*)oWindow  , SIGNAL(qmlSignal(QString)),
                       this, SLOT(cppSlot(QString)));

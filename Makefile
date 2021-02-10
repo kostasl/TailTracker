@@ -12,10 +12,10 @@ MAKEFILE      = Makefile
 
 CC            = gcc
 CXX           = g++
-DEFINES       = -DQT_DEPRECATED_WARNINGS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
+DEFINES       = -DQT_DEPRECATED_WARNINGS -DQT_NO_DEBUG -DQT_WIDGETS_LIB -DQT_QUICKCONTROLS2_LIB -DQT_QUICK_LIB -DQT_GUI_LIB -DQT_QML_LIB -DQT_NETWORK_LIB -DQT_CORE_LIB
 CFLAGS        = -pipe -rdynamic -O2 -w -D_REENTRANT -fPIC $(DEFINES)
 CXXFLAGS      = -pipe -O2 -std=gnu++11 -w -D_REENTRANT -fPIC $(DEFINES)
-INCPATH       = -I. -isystem /usr/local/include/opencv -isystem /usr/local/include -I/opt/Qt/5.12.0/gcc_64/include -I/opt/Qt/5.12.0/gcc_64/include/QtWidgets -I/opt/Qt/5.12.0/gcc_64/include/QtQuick -I/opt/Qt/5.12.0/gcc_64/include/QtGui -I/opt/Qt/5.12.0/gcc_64/include/QtQml -I/opt/Qt/5.12.0/gcc_64/include/QtNetwork -I/opt/Qt/5.12.0/gcc_64/include/QtCore -I. -isystem /usr/include/libdrm -I/opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++
+INCPATH       = -I. -isystem /usr/local/include/opencv -isystem /usr/local/include -I/opt/Qt/5.12.0/gcc_64/include -I/opt/Qt/5.12.0/gcc_64/include/QtWidgets -I/opt/Qt/5.12.0/gcc_64/include/QtQuickControls2 -I/opt/Qt/5.12.0/gcc_64/include/QtQuick -I/opt/Qt/5.12.0/gcc_64/include/QtGui -I/opt/Qt/5.12.0/gcc_64/include/QtQml -I/opt/Qt/5.12.0/gcc_64/include/QtNetwork -I/opt/Qt/5.12.0/gcc_64/include/QtCore -I. -isystem /usr/include/libdrm -I/opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++
 QMAKE         = /opt/Qt/5.12.0/gcc_64/bin/qmake
 DEL_FILE      = rm -f
 CHK_DIR_EXISTS= test -d
@@ -37,8 +37,8 @@ COMPRESS      = gzip -9f
 DISTNAME      = 2pTailTracker1.0.0
 DISTDIR = /home/kostasl/workspace/2pTailTracker/.tmp/2pTailTracker1.0.0
 LINK          = g++
-LFLAGS        = -Wl,-O1 -Wl,-rpath,/opt/Qt/5.12.0/gcc_64/lib
-LIBS          = $(SUBLIBS) -L/usr/local/lib -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_cvv -lopencv_dnn_objdetect -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_freetype -lopencv_fuzzy -lopencv_hfs -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_datasets -lopencv_text -lopencv_dnn -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_xobjdetect -lopencv_objdetect -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_flann -lopencv_xphoto -lopencv_imgproc -lopencv_core -lgsl -lgslcblas -lm -L/opt/Qt/5.12.0/gcc_64/lib -lQt5Widgets -lQt5Quick -lQt5Gui -lQt5Qml -lQt5Network -lQt5Core -lGL -lpthread   
+LFLAGS        = -Wl,-O1 -Wl,-rpath,/opt/Qt/5.12.0/gcc_64/lib -Wl,-rpath-link,/opt/Qt/5.12.0/gcc_64/lib
+LIBS          = $(SUBLIBS) -L/usr/local/lib -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_cvv -lopencv_dnn_objdetect -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_freetype -lopencv_fuzzy -lopencv_hfs -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_datasets -lopencv_text -lopencv_dnn -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_xobjdetect -lopencv_objdetect -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_imgcodecs -lopencv_flann -lopencv_xphoto -lopencv_imgproc -lopencv_core -lgsl -lgslcblas -lm -L/opt/Qt/5.12.0/gcc_64/lib -lQt5Widgets -lQt5QuickControls2 -lQt5Quick -lQt5Gui -lQt5Qml -lQt5Network -lQt5Core -lGL -lpthread   
 AR            = ar cqs
 RANLIB        = 
 SED           = sed
@@ -225,9 +225,9 @@ DIST          = /opt/Qt/5.12.0/gcc_64/mkspecs/features/spec_pre.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/resolve_config.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/default_post.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/link_pkgconfig.prf \
-		/opt/Qt/5.12.0/gcc_64/mkspecs/features/warn_off.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/resources.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/qtquickcompiler.prf \
+		/opt/Qt/5.12.0/gcc_64/mkspecs/features/warn_off.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/qt.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/moc.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/unix/opengl.prf \
@@ -418,9 +418,9 @@ Makefile: 2pTailTracker.pro /opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++/qmake.conf /
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/resolve_config.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/default_post.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/link_pkgconfig.prf \
-		/opt/Qt/5.12.0/gcc_64/mkspecs/features/warn_off.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/resources.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/qtquickcompiler.prf \
+		/opt/Qt/5.12.0/gcc_64/mkspecs/features/warn_off.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/qt.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/moc.prf \
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/unix/opengl.prf \
@@ -434,6 +434,7 @@ Makefile: 2pTailTracker.pro /opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++/qmake.conf /
 		/opt/Qt/5.12.0/gcc_64/mkspecs/features/lex.prf \
 		2pTailTracker.pro \
 		/opt/Qt/5.12.0/gcc_64/lib/libQt5Widgets.prl \
+		/opt/Qt/5.12.0/gcc_64/lib/libQt5QuickControls2.prl \
 		/opt/Qt/5.12.0/gcc_64/lib/libQt5Quick.prl \
 		/opt/Qt/5.12.0/gcc_64/lib/libQt5Gui.prl \
 		/opt/Qt/5.12.0/gcc_64/lib/libQt5Qml.prl \
@@ -600,9 +601,9 @@ Makefile: 2pTailTracker.pro /opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++/qmake.conf /
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/resolve_config.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/default_post.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/link_pkgconfig.prf:
-/opt/Qt/5.12.0/gcc_64/mkspecs/features/warn_off.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/resources.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/qtquickcompiler.prf:
+/opt/Qt/5.12.0/gcc_64/mkspecs/features/warn_off.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/qt.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/moc.prf:
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/unix/opengl.prf:
@@ -616,6 +617,7 @@ Makefile: 2pTailTracker.pro /opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++/qmake.conf /
 /opt/Qt/5.12.0/gcc_64/mkspecs/features/lex.prf:
 2pTailTracker.pro:
 /opt/Qt/5.12.0/gcc_64/lib/libQt5Widgets.prl:
+/opt/Qt/5.12.0/gcc_64/lib/libQt5QuickControls2.prl:
 /opt/Qt/5.12.0/gcc_64/lib/libQt5Quick.prl:
 /opt/Qt/5.12.0/gcc_64/lib/libQt5Gui.prl:
 /opt/Qt/5.12.0/gcc_64/lib/libQt5Qml.prl:
@@ -847,7 +849,7 @@ moc_mainwindow.cpp: /opt/Qt/5.12.0/gcc_64/include/QtGui/QGuiApplication \
 		mainwindow.h \
 		moc_predefs.h \
 		/opt/Qt/5.12.0/gcc_64/bin/moc
-	/opt/Qt/5.12.0/gcc_64/bin/moc $(DEFINES) --include /home/kostasl/workspace/2pTailTracker/moc_predefs.h -I/opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++ -I/home/kostasl/workspace/2pTailTracker -I/usr/local/include/opencv -I/usr/local/include -I/opt/Qt/5.12.0/gcc_64/include -I/opt/Qt/5.12.0/gcc_64/include/QtWidgets -I/opt/Qt/5.12.0/gcc_64/include/QtQuick -I/opt/Qt/5.12.0/gcc_64/include/QtGui -I/opt/Qt/5.12.0/gcc_64/include/QtQml -I/opt/Qt/5.12.0/gcc_64/include/QtNetwork -I/opt/Qt/5.12.0/gcc_64/include/QtCore -I/usr/include/c++/7 -I/usr/include/x86_64-linux-gnu/c++/7 -I/usr/include/c++/7/backward -I/usr/lib/gcc/x86_64-linux-gnu/7/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include mainwindow.h -o moc_mainwindow.cpp
+	/opt/Qt/5.12.0/gcc_64/bin/moc $(DEFINES) --include /home/kostasl/workspace/2pTailTracker/moc_predefs.h -I/opt/Qt/5.12.0/gcc_64/mkspecs/linux-g++ -I/home/kostasl/workspace/2pTailTracker -I/usr/local/include/opencv -I/usr/local/include -I/opt/Qt/5.12.0/gcc_64/include -I/opt/Qt/5.12.0/gcc_64/include/QtWidgets -I/opt/Qt/5.12.0/gcc_64/include/QtQuickControls2 -I/opt/Qt/5.12.0/gcc_64/include/QtQuick -I/opt/Qt/5.12.0/gcc_64/include/QtGui -I/opt/Qt/5.12.0/gcc_64/include/QtQml -I/opt/Qt/5.12.0/gcc_64/include/QtNetwork -I/opt/Qt/5.12.0/gcc_64/include/QtCore -I/usr/include/c++/7 -I/usr/include/x86_64-linux-gnu/c++/7 -I/usr/include/c++/7/backward -I/usr/lib/gcc/x86_64-linux-gnu/7/include -I/usr/local/include -I/usr/lib/gcc/x86_64-linux-gnu/7/include-fixed -I/usr/include/x86_64-linux-gnu -I/usr/include mainwindow.h -o moc_mainwindow.cpp
 
 compiler_moc_objc_header_make_all:
 compiler_moc_objc_header_clean:
