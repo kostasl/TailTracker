@@ -50,8 +50,11 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
                invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos or images to process", outdir.path() ,
                                                               "Image sequences (*.tiff *.png *.jpg *.pgm);;Video files (*.mpg *.avi *.mp4 *.h264 *.mkv)", nullptr, nullptr);
             //Retain ref to output directory
+        if (!invidFileList.isEmpty())
+        {
             videodir.setPath(invidFileList.first());
             invideofile = invidFileList.first();
+        }
     }
 
 
