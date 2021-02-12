@@ -1,6 +1,8 @@
 import QtQuick 2.12
 import QtQuick.Window 2.10
 import QtQuick.Controls 2.3
+//import QtQuick.Dialogs.qml 1.0
+import QtQuick.Dialogs 1.2
 
 Window {
     objectName:"mainWindow"
@@ -14,7 +16,6 @@ Window {
 //    onContentItemChanged: {
 //            qmlSignal("Change");
 //    }
-
 
     Text {
         id: txtLog
@@ -44,7 +45,7 @@ Window {
         width: 200
         height: 200
         fillMode: Image.PreserveAspectFit
-        source: "image://trackerframe/0"
+        source: "qrc:/MeyerLogoIcon256x256.png"
         onStatusChanged: {
                   if(status == Image.Ready)
                       busyIndicator.running = false;
@@ -104,4 +105,78 @@ Window {
 
 
     }
+
+
+    FileDialog {
+        id: fileDialogInput
+        objectName: "inputVideoFile"
+        title: "Please choose a video file"
+        signal qmlInputFileSelectedSig()
+        folder: shortcuts.home
+        onAccepted: {
+            console.log("You chose: " + inputVideoFile.fileUrls)
+            qmlInputFileSelectedSig();
+            Qt.quit()
+        }
+        onRejected: {
+            console.log("Canceled")
+            Qt.quit()
+        }
+        Component.onCompleted: visible = false
+    }
+    FileDialog {
+        id: fileDialogOutput
+        objectName: "inputOutFile"
+        title: "Please choose a save file"
+        folder: shortcuts.home
+        signal qmlOutputFileSelectedSig()
+        onAccepted: {
+            console.log("You chose: " + fileDialogOutput.fileUrls)
+            qmlOutputFileSelectedSig();
+            Qt.quit()
+        }
+        onRejected: {
+            console.log("Canceled")
+            Qt.quit()
+        }
+        Component.onCompleted: visible = false
+    }
+
+    Button {
+        id: buttonInput
+        x: 401
+        y: 26
+        onPressed: {
+            fileDialogInput.visible = true;
+        }
+
+        text: qsTr("Select Input Video")
+    }
+
+    Button {
+        id: buttonOutput
+        x: 401
+        y: 91
+        width: 140
+        height: 40
+        onPressed: {
+            fileDialogOutput.visible = true;
+        }
+        text: qsTr("Select output file")
+    }
+
+    Button {
+        id: buttonTrack
+        x: 401
+        y: 159
+        width: 140
+        height: 40
+        signal qmlStartTracking();
+        text: qsTr("Start tracking")
+        onPressed: {
+             console.log("Starting Tracking...");
+            qmlStartTracking();
+        }
+    }
+
 }

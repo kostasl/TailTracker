@@ -6,7 +6,7 @@
 #include<string>
 
 
-#include <QGuiApplication>
+//#include <QGuiApplication>
 #include <QQmlApplicationEngine>
 #include <QDirIterator>
 #include <QDir>
@@ -43,9 +43,33 @@ using namespace cv;
 int main(int argc, char* argv[]){
 
 
+    QCoreApplication::setAttribute( Qt::AA_UseSoftwareOpenGL );
 
-    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    if (QCoreApplication::testAttribute(Qt::AA_UseSoftwareOpenGL ))
+        qDebug() << "Using SoftwareOpenGL";
+    if (QCoreApplication::testAttribute(Qt::AA_UseDesktopOpenGL))
+        qDebug() << "Using DesktopOpenGL";
+    if (QCoreApplication::testAttribute(Qt::AA_UseOpenGLES))
+         qDebug() << "Using AA_UseOpenGLES";
+    if (QCoreApplication::testAttribute(Qt::AA_UseHighDpiPixmaps))
+         qDebug() << "Using AA_UseHighDpiPixmaps";
+     if (QCoreApplication::testAttribute(Qt::AA_EnableHighDpiScaling))
+         qDebug() << "Using Qt::AA_EnableHighDpiScaling";
+
+    //QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+
+
+
+    //QGuiApplication app(argc, argv); //Cannot create a QWidget without QApplication
+    //This is so FileDialog Works / There may be a way to replace with QML FileDialog  import Qt.labs.platform 1.1
+
     QApplication app(argc, argv);
+    app.setOrganizationName("MeyerLab");
+    app.setOrganizationDomain("kcl.ac.uk");
+
+    app.setQuitOnLastWindowClosed(true);
+
+
 
     QQmlApplicationEngine engine;
     const QUrl mainwindow_url(QStringLiteral("qrc:/main.qml"));
@@ -54,9 +78,10 @@ int main(int argc, char* argv[]){
         if (!obj && mainwindow_url == objUrl)
             QCoreApplication::exit(-1);
     }, Qt::QueuedConnection);
+
     engine.load(mainwindow_url);
 
-    QGuiApplication::setQuitOnLastWindowClosed(true);
+    //QGuiApplication::setQuitOnLastWindowClosed(true);
 
      // To make a new window Instance:
     //QQmlComponent mainWindow(&engine,url);
@@ -123,8 +148,9 @@ int main(int argc, char* argv[]){
     {
         omeanWindow.LogEvent("Goodbye!",0);
         cv::destroyAllWindows();
-
+        app.closeAllWindows();
         app.quit();
+
         engine.quit();
         engine.exit(EXIT_SUCCESS);
         app.exit(EXIT_SUCCESS);

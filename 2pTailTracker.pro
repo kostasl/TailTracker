@@ -64,6 +64,32 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 # make install INSTALL_ROOT=bin/AppDir
 ## delete Unnecessary build files
 # find build-*-*_Qt_* \( -name "moc_*" -or -name "*.o" -or -name "qrc_*" -or -name "Makefile*" -or -name "*.a" \) -exec rm {} \;
+## Make The AppImage but exclude libs :  but still They are found in app dir anyway
+#./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/opt/2pTailTracker/bin/2pTailTracker -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake -appimage  -extra-plugins=iconengines,platformthemes/libqgtk3.so -qmldir=../workspace/2pTailTracker/ -exclude-libs=libEGL.so.1,libnvidia-tls.so.340,libnvidia-glsi.so.340.108,libnvidia-glcore.so.340.108 -verbose=1
+# Whatever I do, the libs keep getting included - so I went for custom packaging with :
+# # appimagetool -v /home/kostasl/workspace/2pTailTracker/bin/AppDir/
+## TO Run it may be best to unset env vars so installed libs do not confuse
+#unset QTDIR; unset QT_PLUGIN_PATH; unset LD_LIBRARY_PATH; ./2p-muscope_Tail_Tracker-x86_64.AppImage
+##Constantly getting Failed to create OpenGL context for format QSurfaceFormat error!
+##Suggested solution for ubuntu: https://github.com/ColinDuquesnoy/MellowPlayer/issues/189#issuecomment-357721156
+## sudo apt-get install qml-module-qtwebchannel
+
+
+
+##DEBUG Lib searches with:
+# LD_DEBUG=libs ./2p-muscope_Tail_Tracker-x86_64.AppImage
+
+##
 #./linuxdeployqt-7-x86_64.AppImage ../workspace/2pTailTracker/bin/AppDir/opt/2pTailTracker/bin/2pTailTracker -unsupported-bundle-everything -unsupported-allow-new-glibc -qmake=/opt/Qt/5.12.0/gcc_64/bin/qmake -appimage  -extra-plugins=iconengines,platformthemes/libqgtk3.so -qmldir=../workspace/2pTailTracker/ -verbose=3
+
+
+
+##Tried std linuxdeploy with qt plugin:
+#./linuxdeploy-x86_64.AppImage --appdir ../workspace/2pTailTracker/bin/AppDir/ --plugin qt --output appimage
+##But it fails:
+
+DISTFILES += \
+    MeyerLogoIcon256x256.png \
+    MeyerLogoIcon32x32.png
 
 

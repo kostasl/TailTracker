@@ -47,7 +47,7 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
         //QFileDialog::setFileMode(QFileDialog::Directory);
 
         if (invidFileList.empty())
-                invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos or images to process", outdir.path() ,
+               invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos or images to process", outdir.path() ,
                                                               "Image sequences (*.tiff *.png *.jpg *.pgm);;Video files (*.mpg *.avi *.mp4 *.h264 *.mkv)", nullptr, nullptr);
             //Retain ref to output directory
             videodir.setPath(invidFileList.first());
@@ -370,7 +370,24 @@ void trackerState::initBGSubstraction()
         //cv::imshow("fg MAsk Learning",fgMask);
         //Show Frame Being Processed
         mptrackerView->setNextFrame(listImages[i-1]);
-        QCoreApplication::processEvents(QEventLoop::AllEvents);
+
+        try{
+             //an OpenGL context for  QSurfacerFormaIs  ERROR raised here on some systems
+            QCoreApplication::processEvents(QEventLoop::AllEvents);
+        }catch (...)
+        {
+             qDebug() << "processEvents Error - Switch QSurface Profile ";
+
+             QSurfaceFormat format;
+             format.setDepthBufferSize(24);
+             QSurfaceFormat::setDefaultFormat(format);
+             format.setProfile(QSurfaceFormat::CompatibilityProfile);
+             qDebug() << "QSurfaceFormat Switched to Compatibility Profile";
+
+             format.setRenderableType( QSurfaceFormat::OpenGL);
+             QSurfaceFormat::setDefaultFormat( format );
+
+        }
     }
 
     setCurrentFrameNumber(startFrame); //Reset To First Frame
