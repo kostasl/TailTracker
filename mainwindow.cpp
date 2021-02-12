@@ -12,7 +12,6 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
     {
         qDebug() << "Failed to create window. Check QtQuick is 2.12 is installed.";
         throw("mainwindow Failed to obtain root object!");
-        return (EXIT_FAILURE);
     }
 
 
