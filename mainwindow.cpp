@@ -4,10 +4,17 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
 {
       // Get Form Object Pointers And Connect Signaling slots
 
-     oWindow = engine.rootObjects().first();
+    oWindow = nullptr;
+    if (!engine.rootObjects().isEmpty())
+        oWindow = engine.rootObjects().first();
      //qWindow = oWindow->findChild<QQuickWindow*>(QString("mainWindow") );
     if (!oWindow)
+    {
+        qDebug() << "Failed to create window. Check QtQuick is 2.12 is installed."
         throw("mainwindow Failed to obtain root object!");
+        return (EXIT_FAILURE);
+    }
+
 
      QObject::connect((QObject*)oWindow  , SIGNAL(qmlSignal(QString)),
                       this, SLOT(cppSlot(QString)));

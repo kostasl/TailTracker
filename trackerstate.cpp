@@ -380,6 +380,7 @@ void trackerState::initBGSubstraction()
 
              QSurfaceFormat format;
              format.setDepthBufferSize(24);
+             format.setOption(QSurfaceFormat::DebugContext);
              QSurfaceFormat::setDefaultFormat(format);
              format.setProfile(QSurfaceFormat::CompatibilityProfile);
              qDebug() << "QSurfaceFormat Switched to Compatibility Profile";

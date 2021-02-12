@@ -5,7 +5,8 @@ import QtQuick.Controls 2.3
 import QtQuick.Dialogs 1.2
 
 Window {
-    objectName:"mainWindow"
+    id:mainWindow
+    //objectName:"mainWindow"
     visible: true
     width: 640
     height: 480
@@ -19,7 +20,7 @@ Window {
 
     Text {
         id: txtLog
-        objectName: "txtLog"
+        //objectName: "txtLog"
         x: 7
         y: 330
         width: 626
@@ -32,14 +33,14 @@ Window {
         signal qmlSignal(string msg)
     }
 
-    Connections {
-        target: txtLog
-        onTextChanged: txtLog.qmlSignal("onTextChanged")
-    }
+//    Connections {
+//        target: txtLog
+//        onTextChanged: txtLog.qmlSignal("onTextChanged")
+//    }
 
     Image {
-        id: videoImage
-        objectName: "imgTracker"
+        id: imgTracker
+        //objectName: "imgTracker"
         x: 195
         y: 38
         width: 200
@@ -56,7 +57,7 @@ Window {
         MouseArea {
                   width: 200
                   height: 200
-                  objectName: "imgMouseArea"
+                  id: imgMouseArea
                   anchors.fill: parent
                   acceptedButtons: Qt.LeftButton | Qt.RightButton
                   anchors.rightMargin: 0
@@ -94,7 +95,7 @@ Window {
 
                   BusyIndicator {
                       id: busyIndicator
-                      objectName: "BusyIndicator"
+                      //objectName: "BusyIndicator"
                       anchors.centerIn: parent
                       running: true
                       x: 70
@@ -109,7 +110,7 @@ Window {
 
     FileDialog {
         id: fileDialogInput
-        objectName: "inputVideoFile"
+        //objectName: "inputVideoFile"
         title: "Please choose a video file"
         signal qmlInputFileSelectedSig()
         folder: shortcuts.home
@@ -122,11 +123,11 @@ Window {
             console.log("Canceled")
             Qt.quit()
         }
-        Component.onCompleted: visible = false
+        //onCompleted: visible = false
     }
     FileDialog {
         id: fileDialogOutput
-        objectName: "inputOutFile"
+        //objectName: "inputOutFile"
         title: "Please choose a save file"
         folder: shortcuts.home
         signal qmlOutputFileSelectedSig()
@@ -139,12 +140,12 @@ Window {
             console.log("Canceled")
             Qt.quit()
         }
-        Component.onCompleted: visible = false
+         //Component.onCompleted: visible = false
     }
 
     Button {
         id: buttonInput
-        x: 401
+        x: 465
         y: 26
         onPressed: {
             fileDialogInput.visible = true;
@@ -155,7 +156,7 @@ Window {
 
     Button {
         id: buttonOutput
-        x: 401
+        x: 465
         y: 91
         width: 140
         height: 40
@@ -167,7 +168,7 @@ Window {
 
     Button {
         id: buttonTrack
-        x: 401
+        x: 465
         y: 159
         width: 140
         height: 40
