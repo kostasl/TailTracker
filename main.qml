@@ -120,6 +120,7 @@ Window {
         onAccepted: {
             console.log("You chose: " + fileDialogInput.fileUrls)
             qmlInputFileSelectedSig(fileDialogInput.fileUrls);
+            fileDialogOutput.setFolder(fileDialogInput.fileUrl); //Start Output dialog from where input ended
             Qt.quit()
         }
         onRejected: {
@@ -210,6 +211,7 @@ Window {
             fileDialogInput.selectFolder = false;
             fileDialogInput.setNameFilters("*.avi *.mp4 *.mkv *.h264;; *.*");
             fileDialogInput.visible = true;
+
         }
 
         text: qsTr("Select Input Video")

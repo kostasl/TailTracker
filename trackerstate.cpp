@@ -310,8 +310,8 @@ int trackerState::initInputVideoStream()
     if (endFrame == 0) //If User has not set Stop Point- Set it to end of video
         endFrame =  mptrackerView->endFrameNumber();
 
-    assert(startFrame < endFrame);
 
+    assert(startFrame <= endFrame);
     //  Check If it contains no Frames And Exit
     if (mptrackerView->getTotalFrames() < 2)
     {
