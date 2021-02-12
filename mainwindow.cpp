@@ -10,7 +10,7 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
      //qWindow = oWindow->findChild<QQuickWindow*>(QString("mainWindow") );
     if (!oWindow)
     {
-        qDebug() << "Failed to create window. Check QtQuick is 2.12 is installed."
+        qDebug() << "Failed to create window. Check QtQuick is 2.12 is installed.";
         throw("mainwindow Failed to obtain root object!");
         return (EXIT_FAILURE);
     }
