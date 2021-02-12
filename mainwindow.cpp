@@ -28,6 +28,26 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
      QObject::connect(oMouseArea  , SIGNAL(qmlMouseDragSig()),
                       this, SLOT(mouseDragSlot()));
 
+     oInputFileDialog = (oWindow->findChild<QObject*>("fileDialogInput"));
+     QObject::connect(oInputFileDialog  , SIGNAL(qmlInputFileSelectedSig(QString)),
+                      this, SLOT(inputFileChangedSlot(QString)));
+     //QObject::connect(oInputFileDialog  , SIGNAL(fileSelected(const QString&)),
+     //                 this, SLOT(inputFileChangedSlot(QString)));
+
+
+     oOutputFileDialog = (oWindow->findChild<QObject*>("fileDialogOutput"));
+     oOutputFileDialog->setProperty("selectFile","output.csv");
+     QObject::connect(oOutputFileDialog  , SIGNAL(qmlOutputFileSelectedSig(QString)),
+                      this, SLOT(outputFileChangedSlot(QString)));
+     QObject::connect(oOutputFileDialog  , SIGNAL(fileSelected(const QString&)),
+                      this, SLOT(outputFileChangedSlot(QString)));
+
+
+
+     oButtonTrack = (oWindow->findChild<QObject*>("buttonStartTrack"));
+     QObject::connect(oButtonTrack  , SIGNAL(qmlStartTracking()),
+                              this, SLOT(startTrackingSlot()));
+
      this->installEventFilter(this); //To KeyPresses
      oWindow->installEventFilter(this);
 
@@ -41,6 +61,7 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
      busyIndicator = (oWindow->findChild<QObject*>("BusyIndicator")); //QTextObject
 
      ptrackerState = trackerstate; //Save pointer to Tracker State Object
+
 }
 
 void mainwindow::LogEvent(QString msg,int AlertLevel)

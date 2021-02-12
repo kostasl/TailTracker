@@ -76,6 +76,50 @@ public:
     bool openDataFile();
     void closeDataFile();
     bool saveFrameTrack();
+    void addinputFile(QString filepath){
+
+        invideofile.setFile(filepath) ;
+        videodir.setPath(filepath);
+        if (invideofile.exists() && invideofile.isFile())
+            invidFileList.append( invideofile.filePath() );
+        //Adding Folder Not File
+        if (videodir.exists() && !invideofile.isDir())
+        {
+            if (!videodir.entryInfoList().isEmpty()){
+                invidFileList.append(videodir.entryInfoList(InputFilefilters,QDir::Filter::Files).first().absoluteFilePath());
+            }
+            else{
+                lastError.first = "Folder " + videodir.path() + " is empty.";
+            }
+        }
+
+
+
+        //Retain ref to output directory
+        if (!invidFileList.isEmpty())
+        {
+            videodir.setPath(invidFileList.first());
+            //invideofile = invidFileList.first();
+        }
+
+
+        qDebug() << filepath << " Added to queue";
+    }
+    void setOutputFile(QString filepath)
+    {
+        outdir.setPath((filepath));
+        if (!outdir.exists((filepath)))
+            outdir.mkdir((filepath));
+
+        outdatafile.setFileName(outdir.path() +"/"+ invideofile.fileName().append(".csv"));
+
+        qDebug() << "Output file set to:" << filepath;
+    }
+    bool startTracking();
+    bool isReady();
+
+
+
 
 
 public:
@@ -85,6 +129,7 @@ public:
     bool bshowMask   = false;
     bool bTracking   = true; //Start By Tracking by default
     bool bExiting    = false;
+    bool bReady      = false;
     bool bStartFrameChanged = false;
     bool bSkipExisting = false; //If An output file exists then do not retrack the video / Skip
 
@@ -132,8 +177,12 @@ private:
     QDir outdir;
     QDir videodir;
     QFile outdatafile;
+    QStringList InputFilefilters;
+
+
 
     QFileInfo invideofile;
+    QFileInfo lastvideofile;
     QStringList invidFileList; // List of video file names To process
     std::ofstream foutLog;//Used for Logging To File
     t_tracker_error lastError;

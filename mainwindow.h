@@ -37,6 +37,23 @@ public:
        void cppSlot(const QString &msg) {
            qDebug() << "Called the cpp C++ slot with message:" << msg;
        }
+       void inputFileChangedSlot(const QString &fileName)
+       {
+           qDebug() << "Change input to :" << fileName;
+           QUrl inF(fileName); //Convert Url To AbsPath
+           ptrackerState->addinputFile(inF.toLocalFile());
+       }
+       void outputFileChangedSlot(const QString &fileName)
+       {
+            qDebug() << "Output file set to to :" << fileName;
+             QUrl inF(fileName); //Convert Url To AbsPath
+            ptrackerState->setOutputFile(inF.toLocalFile());
+
+       }
+       void startTrackingSlot()
+       {
+           ptrackerState->startTracking();
+       }
        //Mouse Is PressedAndHold
        void mouseClickSlot() {
            mouseX = oMouseArea->property("mouseX").toInt();
@@ -107,6 +124,9 @@ private :
     QObject* oMouseArea; //Video frame Mouse Are
     QObject* busyIndicator;
     QObject* oWindow;
+    QObject* oInputFileDialog;
+    QObject* oOutputFileDialog;
+    QObject*  oButtonTrack;
     trackerState*  ptrackerState; //POinter to External instance of tracker state - Passed from Constructor
 };
 

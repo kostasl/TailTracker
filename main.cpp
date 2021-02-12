@@ -142,24 +142,31 @@ int main(int argc, char* argv[]){
 //   }else
 //       writeFishDataCSVHeader(outfishdatafile);
 
-    processVideo(omeanWindow,oTrackerstate);
 
-    if(oTrackerstate.bExiting)
+    while (processVideo(omeanWindow,oTrackerstate))
     {
-        omeanWindow.LogEvent("Goodbye!",0);
-        cv::destroyAllWindows();
-        app.closeAllWindows();
-        app.quit();
+        if(oTrackerstate.bExiting)
+        {
+            omeanWindow.LogEvent("Goodbye!",0);
+            cv::destroyAllWindows();
+            app.closeAllWindows();
+            app.quit();
 
-        engine.quit();
-        engine.exit(EXIT_SUCCESS);
-        app.exit(EXIT_SUCCESS);
+            engine.quit();
+            engine.exit(EXIT_SUCCESS);
+            app.exit(EXIT_SUCCESS);
 
 
-        //exit(0);
-        //std::exit(EXIT_SUCCESS);
-        return EXIT_SUCCESS;
-    }
+            //exit(0);
+            //std::exit(EXIT_SUCCESS);
+            return EXIT_SUCCESS;
+        }
+
+      QCoreApplication::processEvents(QEventLoop::AllEvents);
+    }//Main Loop
+
+
+
 
    return app.exec();
 }

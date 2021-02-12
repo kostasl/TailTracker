@@ -28,6 +28,8 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     QString strvidFilename;
     QString stroutDir;
 
+    InputFilefilters << "*.pgm; *.tiff; *.png";
+
     if (parser.has("help"))
     {
         parser.printMessage();
@@ -37,26 +39,19 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
  /// Check if vid file provided in arguments.
  /// If File exists added to video file list, otherwise save directory and open dialogue to choose a file from there
     if (parser.has("invideofile"))
-    {   QString fvidFileName = QString::fromStdString( parser.get<std::string>("invideofile") );
-        invideofile.setFile(fvidFileName) ;
-        videodir.setPath(fvidFileName);
-
-        if (invideofile.exists() && invideofile.isFile())
-            invidFileList.append( invideofile.filePath() );
+    {   strvidFilename = QString::fromStdString( parser.get<std::string>("invideofile") );
+        addinputFile(strvidFilename);
     }else {
         //QFileDialog::setFileMode(QFileDialog::Directory);
-
-        if (invidFileList.empty())
-               invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos or images to process", outdir.path() ,
-                                                              "Image sequences (*.tiff *.png *.jpg *.pgm);;Video files (*.mpg *.avi *.mp4 *.h264 *.mkv)", nullptr, nullptr);
-            //Retain ref to output directory
+        //if (invidFileList.empty())
+        //       invidFileList = QFileDialog::getOpenFileNames(nullptr, "Select videos or images to process", outdir.path() ,
+       //                                                      "All std formats(*.png *.pgm *.avi *mp4);;Image sequences (*.tiff *.png *.jpg *.pgm);;Video files (*.mpg *.avi *.mp4 *.h264 *.mkv)", nullptr, nullptr);
         if (!invidFileList.isEmpty())
         {
             videodir.setPath(invidFileList.first());
-            invideofile = invidFileList.first();
+            //invideofile = invidFileList.first(); /This is called in isReady
         }
     }
-
 
     if (parser.has("invideolist"))
     {
@@ -73,7 +68,7 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
                 if (line.isNull())
                     break;
                 else
-                    invidFileList.append(line);
+                    addinputFile(line);
             }
         }else
         {
@@ -84,20 +79,20 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     //Check if outdir provided otherwise open Dialog
     if (parser.has("outputdir"))
     {
-        QString soutFolder = QString::fromStdString(parser.get<std::string>("outputdir"));
-        if (!outdir.exists((soutFolder)))
-            outdir.mkdir((soutFolder));
+        stroutFilename = QString::fromStdString(parser.get<std::string>("outputdir"));
+        std::clog << "Output Data file : " << stroutFilename.toStdString() << std::endl;
+        setOutputFile(stroutFilename);
     }
     else
     {
       // getting the filename (full path)
-      stroutFilename  = QFileDialog::getSaveFileName(nullptr, "Save tracks to output",invideofile.dir().path() +"/"+ invideofile.dir().dirName().append(".csv"), "CSV files (*.csv);", nullptr, nullptr);
-      std::clog << "Output Data file : " << stroutFilename.toStdString() << std::endl;
-      outdir.setPath((stroutFilename));
+      //stroutFilename  = QFileDialog::getSaveFileName(nullptr, "Save tracks to output",invideofile.dir().path() +"/"+ invideofile.dir().dirName().append(".csv"), "CSV files (*.csv);", nullptr, nullptr);
+
     }
 
-    outdatafile.setFileName(stroutFilename);
-    //std::cout << "Output Data file : " << stroutFilename.toStdString()  << "\n " << std::endl;
+
+
+
 
     /// Setup Output Log File //
     if ( parser.has("logtofile") )
@@ -159,6 +154,11 @@ void trackerState::setCurrentFrameNumber(uint nFrame)
     mptrackerView->setCurrentFrameNumber(nFrame);
 }
 
+uint trackerState::getCurrentFrameNumber()
+{
+    return (mptrackerView->getCurrentFrameNumber());
+}
+
 
 
 /// Retrieves next frame from capture device -
@@ -194,8 +194,10 @@ bool trackerState::atFirstFrame()
 {
     return(mptrackerView->getCurrentFrameNumber() == startFrame);
 }
+
 bool trackerState::atLastFrame()
 {
+
     return(mptrackerView->getCurrentFrameNumber() == (mptrackerView->getTotalFrames()));
 }
 bool trackerState::atStopFrame()
@@ -253,7 +255,8 @@ void trackerState::processInputKey(char Key)
             bExiting = true;
             bTracking = false;
             bPaused = true;
-
+            bReady = false;
+            qDebug() << "User issued exit. ";
             break;
 
     case 'T':
@@ -269,17 +272,7 @@ void trackerState::processInputKey(char Key)
 
     case 'R':
     case 'r':
-        if (!atLastFrame())
-            bPaused = false;
-        else
-        {
-           lastError.first = "[INFO] Cannot upause - End of video reached ";
-           lastError.second = 10;
-           std::clog << "[INFO] Cannot upause - End of video reached " << std::endl;
-           mptrackerView->initInputVideoStream(invideofile);
-           std::clog << "[INFO] Rewinding-video " << std::endl;
-        }
-
+        startTracking();
     }
 }
 
@@ -295,10 +288,16 @@ t_tracker_error trackerState::getLastError()
 /// \brief Initialize BG substractor objects, depending on options / can use cuda
 int trackerState::initInputVideoStream()
 {
-    QFileInfo videoFile = getNextVideoFile();
+    QFileInfo videoFile = invideofile;
 
     if (videoFile.isDir())
        std::clog << "Reading image files from " << videoFile.path().toStdString() << std::endl;
+
+    if (invideofile.path().contains(" ")){
+        lastError.first = "File paths must not contain spaces ";
+        lastError.second = 3;
+        std::clog <<  lastError.first.toStdString()  << std::endl;
+    }
 
     int ret    = mptrackerView->initInputVideoStream(videoFile);
     startFrame = mptrackerView->startFrame;
@@ -324,6 +323,9 @@ int trackerState::initInputVideoStream()
     // Video  Paused upon opening
     if (bStartPaused)
         bPaused = true;
+
+    //Show First Frame
+    //mptrackerView->setNextFrame(getNextFrame());
 
     return ret;
 }//End of Function
@@ -376,7 +378,8 @@ void trackerState::initBGSubstraction()
 
         try{
              //an OpenGL context for  QSurfacerFormaIs  ERROR raised here on some systems
-            QCoreApplication::processEvents(QEventLoop::AllEvents);
+            //QCoreApplication::processEvents(QEventLoop::AllEvents);
+            QCoreApplication::processEvents();
         }catch (...)
         {
              qDebug() << "processEvents Error - Switch QSurface Profile ";
@@ -392,6 +395,7 @@ void trackerState::initBGSubstraction()
              QSurfaceFormat::setDefaultFormat( format );
 
         }
+
     }
 
     setCurrentFrameNumber(startFrame); //Reset To First Frame
@@ -447,9 +451,15 @@ QFileInfo trackerState::getNextVideoFile()
         invidFileList.removeFirst();
 
         return (invideofile);
+    }else
+    {   //Empty No Next File Found
+        invideofile = QFileInfo();
+        videodir = invideofile.dir();
+
+
     }
 
-    return(QFileInfo());
+    return(invideofile);
 }
 
 void trackerState::initSpine()
@@ -567,4 +577,95 @@ void trackerState::closeDataFile()
     std::clog << " Closed Output File " << outdatafile.fileName().toStdString() << std::endl;
     lastError.first = QString(" Closed Output File :") + outdatafile.fileName();
     lastError.second = 0;
+
+    // Done Processing This Video //
+    // Invalidate File Processed
+    lastvideofile = invideofile;
+    invideofile.setFile("");
+
+}
+
+bool trackerState::isReady()
+{
+    bool bReady = true;
+    QString invideofileName;
+
+    //Get Next File In the Queue and Init Stream
+    //Sets invideo file to next.
+       bReady = !atLastFrame(); //Needs Rewind
+
+//       if (invidFileList.isEmpty())
+//       {
+//           lastError.first = "[Error] No Files to track selected";
+//           lastError.second = 2;
+//           //bPaused = true;
+//           bReady = false;
+//       }
+       if (!invideofile.exists() )
+       {
+           invideofile = getNextVideoFile();
+           if (!invideofile.exists())
+           {
+               //qDebug() << "[Error] Need to select video file to process.";
+               //qDebug() << "[Error] " << invideofileName << " Does not exist";
+               lastError.first = "[Error] " + invideofile.fileName() + " Does not exist";
+               lastError.second = 2;
+               //bPaused = true;
+               bReady = false;
+            }else
+           {
+                  bReady = true;
+                  bPaused = true;
+           }
+
+
+       }else{
+            //Retain ref to output directory
+            videodir.setPath(invideofile.dir().path());
+            bReady = bReady & true;
+        }
+
+        if (outdatafile.fileName().isEmpty())
+        {
+            //qDebug() << "[Error] Need to set output file to proceed.";
+            lastError.first =  "[Error] Need to set output file to proceed.";
+            lastError.second = 2;
+            bPaused = true;
+            bReady = bReady & true; //Needs to combine with previous check being true
+        }
+
+
+
+     return bReady;
+}
+
+bool trackerState::startTracking()
+{
+    if (atLastFrame())
+    {
+       lastError.first = "[INFO] Cannot upause - End of video reached ";
+       lastError.second = 10;
+       std::clog << "[INFO] Cannot upause - End of video reached " << std::endl;
+       //mptrackerView->initInputVideoStream(invideofile);
+
+       //mptrackerView->setCurrentFrameNumber(startFrame);
+       if (invidFileList.count() > 0)
+             std::clog << "[INFO] Proceed to next video" << std::endl;
+        else
+            std::clog << "[INFO] Need to select new video to process" << std::endl;
+
+       return (false);
+    }
+
+
+    if (isReady())
+    {
+        qDebug() << "Tracker state : Unpaused:";
+        bPaused = false;
+        bStartPaused = false;
+        bExiting = false;
+        bReady = true;
+    }
+
+    return(true);
 }

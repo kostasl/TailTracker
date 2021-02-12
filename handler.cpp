@@ -50,14 +50,27 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     QString frameNumberString;
     //OpenCV open The video File
 
-    trackerState.initInputVideoStream();
+    /// Do checks for param and initialize inputStream
+    if (!trackerState.isReady())
+        return 1; //Wait Until Ready
+    else
+        trackerState.initInputVideoStream(); //Draws The 1st file from List
+
     t_tracker_error lastError = trackerState.getLastError();
     window_main.LogEvent(lastError.first,lastError.second);
     window_main.LogEvent(QString("Total frames to track:") + QString::number( trackerState.ImageSequenceProvider()->getTotalFrames() ),5 );
     window_main.LogEvent(QString("Calculating Background image"),10 );
+
+    frame = trackerState.getNextFrame();
+    window_main.showCVImage(frame, trackerState.getCurrentFrameNumber());
+
+    /// Do BG Substraction
     window_main.setBusyOn();
     trackerState.initBGSubstraction();
     window_main.setBusyOff();
+
+
+
 
      //Once BG Donw, Rewind Video
     trackerState.ImageSequenceProvider()->setCurrentFrameNumber(trackerState.startFrame);
@@ -190,7 +203,13 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
     trackerState.closeDataFile();
 
-    return (trackerState.ImageSequenceProvider()->getCurrentFrameNumber());
+    if (trackerState.bExiting)
+        return 0; //Stop The Main Loop
+    else
+    {//Done this loop - Set state to Not Ready and wait for instruction
+        trackerState.bReady = false;
+        return 1;
+    }
 }
 
 //// Remove Pixel Noise

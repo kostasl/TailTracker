@@ -6,7 +6,7 @@ import QtQuick.Dialogs 1.2
 
 Window {
     id:mainWindow
-    //objectName:"mainWindow"
+    objectName:"mainWindow"
     visible: true
     width: 640
     height: 480
@@ -20,7 +20,7 @@ Window {
 
     Text {
         id: txtLog
-        //objectName: "txtLog"
+        objectName: "txtLog"
         x: 7
         y: 330
         width: 626
@@ -40,7 +40,7 @@ Window {
 
     Image {
         id: imgTracker
-        //objectName: "imgTracker"
+        objectName: "imgTracker"
         x: 195
         y: 38
         width: 200
@@ -58,6 +58,7 @@ Window {
                   width: 200
                   height: 200
                   id: imgMouseArea
+                  objectName: "imgMouseArea"
                   anchors.fill: parent
                   acceptedButtons: Qt.LeftButton | Qt.RightButton
                   anchors.rightMargin: 0
@@ -95,7 +96,7 @@ Window {
 
                   BusyIndicator {
                       id: busyIndicator
-                      //objectName: "BusyIndicator"
+                      objectName: "BusyIndicator"
                       anchors.centerIn: parent
                       running: true
                       x: 70
@@ -110,13 +111,15 @@ Window {
 
     FileDialog {
         id: fileDialogInput
-        //objectName: "inputVideoFile"
+        objectName: "fileDialogInput"
         title: "Please choose a video file"
-        signal qmlInputFileSelectedSig()
+        signal qmlInputFileSelectedSig(string msg)
+        selectedNameFilter: "*.pgm *.tiff * mp4 *.avi "
+        selectExisting: true
         folder: shortcuts.home
         onAccepted: {
-            console.log("You chose: " + inputVideoFile.fileUrls)
-            qmlInputFileSelectedSig();
+            console.log("You chose: " + fileDialogInput.fileUrls)
+            qmlInputFileSelectedSig(fileDialogInput.fileUrls);
             Qt.quit()
         }
         onRejected: {
@@ -127,57 +130,90 @@ Window {
     }
     FileDialog {
         id: fileDialogOutput
-        //objectName: "inputOutFile"
-        title: "Please choose a save file"
+        objectName: "fileDialogOutput"
+        title: "Set output file "
         folder: shortcuts.home
-        signal qmlOutputFileSelectedSig()
+        //selectFile : "somefile.txt"
+        signal qmlOutputFileSelectedSig(string msg)
+        selectExisting: false
         onAccepted: {
             console.log("You chose: " + fileDialogOutput.fileUrls)
-            qmlOutputFileSelectedSig();
+            qmlOutputFileSelectedSig(fileDialogOutput.fileUrls);
             Qt.quit()
         }
         onRejected: {
-            console.log("Canceled")
+            console.log("Cancelled")
             Qt.quit()
         }
+
+
+
          //Component.onCompleted: visible = false
     }
 
-    Button {
-        id: buttonInput
-        x: 465
-        y: 26
-        onPressed: {
-            fileDialogInput.visible = true;
-        }
-
-        text: qsTr("Select Input Video")
-    }
 
     Button {
         id: buttonOutput
         x: 465
-        y: 91
-        width: 140
+        y: 220
+        width: 149
         height: 40
         onPressed: {
+            fileDialogInput.selectFolder = true;
+
             fileDialogOutput.visible = true;
         }
-        text: qsTr("Select output file")
+        text: qsTr("Select output folder")
     }
 
     Button {
         id: buttonTrack
-        x: 465
-        y: 159
+        objectName: "buttonStartTrack"
+        x: 225
+        y: 267
         width: 140
         height: 40
         signal qmlStartTracking();
         text: qsTr("Start tracking")
         onPressed: {
-             console.log("Starting Tracking...");
+            console.log("Starting Tracking...");
             qmlStartTracking();
         }
+    }
+
+    Button {
+        id: buttonOpenFolder
+        x: 465
+        y: 86
+        width: 149
+        height: 40
+        text: qsTr("Select Input Folder")
+        onPressed:
+        {
+            fileDialogInput.setTitle("Select Folder with image sequence");
+            fileDialogInput.setNameFilters("*");
+            fileDialogInput.selectNameFilter("*");
+            fileDialogInput.setNameFilters("*");
+            fileDialogInput.selectFolder = true;
+
+            fileDialogInput.visible = true;
+        }
+    }
+
+    Button {
+        id: buttonSelectVideo
+        x: 465
+        y: 26
+        width: 149
+        height: 40
+        onPressed: {
+            fileDialogInput.setTitle("Select Video file");
+            fileDialogInput.selectFolder = false;
+            fileDialogInput.setNameFilters("*.avi *.mp4 *.mkv *.h264;; *.*");
+            fileDialogInput.visible = true;
+        }
+
+        text: qsTr("Select Input Video")
     }
 
 }
