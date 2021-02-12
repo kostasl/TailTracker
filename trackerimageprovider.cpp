@@ -123,7 +123,7 @@ uint trackerImageProvider::getTotalFrames(){
 uint trackerImageProvider::endFrameNumber(){
 
     if (imageSequenceFiles.count() > 0)
-         endFrame = imageSequenceFiles.last().baseName().toInt();
+         endFrame = imageSequenceFiles.last().baseName().toInt()+1;
     else
          endFrame = getTotalFrames();
 
@@ -177,7 +177,10 @@ void trackerImageProvider::closeInputStream()
         return;
 
     if (pcvcapture->isOpened())
+    {
         pcvcapture->release();
+
+    }
 }
 
 

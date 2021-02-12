@@ -581,16 +581,34 @@ bool trackerState::openDataFile()
 
 void trackerState::closeDataFile()
 {
-    outdatafile.close();
-    std::clog << " Closed Output File " << outdatafile.fileName().toStdString() << std::endl;
-    lastError.first = QString(" Closed Output File :") + outdatafile.fileName();
-    lastError.second = 0;
+    if (outdatafile.isOpen())
+    {
+        outdatafile.close();
+        std::clog << " Closed Output File " << outdatafile.fileName().toStdString() << std::endl;
+        lastError.first = QString(" Closed Output File :") + outdatafile.fileName();
+        lastError.second = 0;
 
-    // Done Processing This Video //
-    // Invalidate File Processed
-    lastvideofile = invideofile;
-    invideofile.setFile("");
+        // Done Processing This Video //
+        // Invalidate File Processed
+        lastvideofile = invideofile;
+        invideofile.setFile("");
+    }
 
+
+}
+
+bool trackerState::unloadCurrentVideo()
+{
+    if (invideofile.exists())
+    {
+        invideofile.setFile("");
+        mptrackerView->closeInputStream();
+        startFrame = 0;
+        endFrame = 0;
+        closeDataFile();
+        return(true);
+    }else
+        return(false);
 }
 
 bool trackerState::isReady()
@@ -600,7 +618,13 @@ bool trackerState::isReady()
 
     //Get Next File In the Queue and Init Stream
     //Sets invideo file to next.
-       bReady = !atLastFrame(); //Needs Rewind
+       if(atLastFrame()) //Needs Rewind
+       {
+           bReady = false;
+           lastError.first = "[Warning] Video finished tracking. Unload and closing data file.";
+           lastError.second = 5;
+           unloadCurrentVideo();
+       }
 
 //       if (invidFileList.isEmpty())
 //       {

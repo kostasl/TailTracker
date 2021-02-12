@@ -201,15 +201,18 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
          QCoreApplication::processEvents(QEventLoop::AllEvents);
      }/// Main While - Reading Frames Loop
 
-    trackerState.closeDataFile();
+    trackerState.unloadCurrentVideo();
+    //trackerState.closeDataFile();
+    //trackerState.ImageSequenceProvider()->closeInputStream();
 
     if (trackerState.bExiting)
         return 0; //Stop The Main Loop
     else
-    {//Done this loop - Set state to Not Ready and wait for instruction
-        trackerState.bReady = false;
-        return 1;
-    }
+       return 1;
+    //{//Done this loop - Set state to Not Ready and wait for instruction
+        //trackerState.bReady = false;
+
+    //}
 }
 
 //// Remove Pixel Noise

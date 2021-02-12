@@ -54,6 +54,7 @@ public:
     trackerState(cv::CommandLineParser& parser,trackerImageProvider* ptrackerView); //Read Command Line/Config Options
     void initBGSubstraction();
     int initInputVideoStream();
+    bool unloadCurrentVideo();
     void initSpine();
     void saveState(std::string strFilename);
     void loadState(std::string strFilename);
@@ -114,6 +115,8 @@ public:
     }
     void setOutputFile(QString filepath)
     {
+        closeDataFile(); //Close If Already Open
+
         outdir.setPath((filepath));
         if (!outdir.exists((filepath)))
             outdir.mkdir((filepath));
@@ -123,6 +126,8 @@ public:
             outdatafile.setFileName(outdir.path() +"/output.csv");
 
         qDebug() << "Output file set to:" << filepath;
+
+        openDataFile(); //Open New one
     }
     bool startTracking();
     bool isReady();
