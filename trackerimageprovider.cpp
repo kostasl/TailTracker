@@ -244,8 +244,11 @@ int trackerImageProvider::initInputVideoStream(QFileInfo& pvideoFile)
         pcvcapture = new cv::VideoCapture( videoFile.filePath().toStdString() );
         startFrame = ( videoFile.baseName().toInt() );
         currentFrameNumber =startFrame;
+        if (startFrame == 0)
+            pcvcapture->open(cvFilePattern);
+        else
+            pcvcapture->open(videoFile.filePath().toStdString());
 
-        pcvcapture->open(cvFilePattern);
         pcvcapture->set(CV_CAP_PROP_POS_FRAMES, currentFrameNumber );
 
         if(!pcvcapture->isOpened())
