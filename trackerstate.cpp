@@ -302,6 +302,7 @@ int trackerState::initInputVideoStream()
     int ret    = mptrackerView->initInputVideoStream(videoFile);
     startFrame = mptrackerView->startFrame;
     lastError  = mptrackerView->getLastError();
+    setCurrentFrameNumber(startFrame);
 
     //move to requested start frame
     mptrackerView->setCurrentFrameNumber(startFrame);
@@ -315,7 +316,7 @@ int trackerState::initInputVideoStream()
     //  Check If it contains no Frames And Exit
     if (mptrackerView->getTotalFrames() < 2)
     {
-        lastError.first = "[ERROR] This Video File is empty ";
+        lastError.first = "[ERROR] Next Video empty ";
         lastError.second = 2;
         ret = 0;
         mptrackerView->closeInputStream();
@@ -339,8 +340,10 @@ int trackerState::initInputVideoStream()
 /// \brief Initialize BG substractor objects, depending on options / can use cuda
 void trackerState::initBGSubstraction()
 {
-
-    //Cap Number of BG training Frames To not exceed number of available frames
+    //Reset to initial value
+    MOGLearningRate = c_MOGLearningRate;
+    MOGhistory      = c_MOGhistory;
+    //Cap Number of BG training Frames To not exceed numbe;r of available frames
     MOGhistory = (mptrackerView->getTotalFrames() < MOGhistory)?mptrackerView->getTotalFrames():MOGhistory;
     MOGLearningRate = max(MOGLearningRate,5.0/MOGhistory); //Adjust Learning Rate To Number of Available Frames
 
@@ -602,6 +605,8 @@ bool trackerState::unloadCurrentVideo()
     if (invideofile.exists())
     {
         invideofile.setFile("");
+
+        //setCurrentFrameNumber(0);
         mptrackerView->closeInputStream();
         startFrame = 0;
         endFrame = 0;

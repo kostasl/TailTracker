@@ -105,7 +105,7 @@ public:
         if (!invidFileList.isEmpty())
         {
             videodir.setPath(invidFileList.first());
-            invidFileList.append(filepath);
+            //invidFileList.append(filepath);
             //invideofile.
 
         }
@@ -153,12 +153,13 @@ public:
     int g_Segthresh = 0;
     int userInputKey = 0;
     uint startFrame = 1;
-    uint endFrame;
+    uint endFrame; /// User defined tracking stop point /  Before Video Ends
     uint errorFrames = 0;
 
     //Background model
     cv::Ptr<cv::BackgroundSubtractorMOG2> pBGsubmodel; //MOG2 Background subtractor
-    int MOGhistory = 1450;
+    const int c_MOGhistory = 2000;
+    int MOGhistory = 2000;
     ///The main threshold on the squared Mahalanobis distance to decide if the sample is well described by the background model or not.
     /// //If a pixel is not close to any component, it is considered foreground or added as a new component. 3 sigma => Tg=3*3=9 is default.
     double MOGVarThreshold = 3.0;
@@ -167,13 +168,14 @@ public:
     float MOGBGRatio = 0.01f;
     int MOGNMixtures = 12;
     double MOGLearningRate = 0.01; //0.0001
+    const double c_MOGLearningRate = 0.01; //0.0001
     const double MOGNominamLearningRate = 0.0;
     cv::Mat bgFrame;
 
-    double contrastGain = 2.4;
-    double brightness  = 25;
+    //double contrastGain = 3.4; //In image Provider
+    //double brightness  = 25;
 
-    const int FitTailIntensityScanAngleDeg   = 35; //35
+    const int FitTailIntensityScanAngleDeg   = 15; //35
     const int FishTailSpineSegmentCount      = 15;
     int FishTailSpineSegmentLength           = 9; //Length of Each Segment
     double fishBearingRads                 = 26.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default

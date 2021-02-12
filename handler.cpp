@@ -106,6 +106,12 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         {
              trackerState.bPaused = true; //Stop Here
              window_main.LogEvent(QString(">> Stop Frame Reached - Video Paused <<"),5);
+             if (trackerState.atLastFrame())
+             {
+                 window_main.LogEvent(QString(">> Video Ended <<"),5);
+                 break;
+             }
+
         }
 
          //Pause on 1st Frame If Flag Start Paused is set
@@ -142,7 +148,7 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         cvtColor( bgFrame,  bgFrame, COLOR_BGR2GRAY ); // Convert the image to grayscale
         //cvtColor( frame_denoise, frame_denoise, CV_8UC1 ); // Convert the image to grayscale
 
-        bgFrame.convertTo(bgFrame,-1,0.8,-1);
+        bgFrame.convertTo(bgFrame,-1,0.6,-1);
         cv::absdiff(frame_denoise, bgFrame,frame_diff );
         frame_diff.copyTo(frame_denoise);
 

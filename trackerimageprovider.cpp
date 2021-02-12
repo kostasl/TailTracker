@@ -106,9 +106,9 @@ bool trackerImageProvider::atFirstFrame(){
 
 bool trackerImageProvider::atLastFrame(){
     //Make sure Current Frame Does not exceed last frame number
-    currentFrameNumber = (currentFrameNumber>endFrame)?endFrame:currentFrameNumber;
+    currentFrameNumber = (currentFrameNumber>=totalVideoFrames)?totalVideoFrames:currentFrameNumber;
 
-    return(currentFrameNumber == (endFrame));
+    return(currentFrameNumber == (totalVideoFrames));
 }
 
 // TODO: allow for stopping at user provided endFrame
