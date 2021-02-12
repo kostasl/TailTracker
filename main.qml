@@ -159,8 +159,7 @@ Window {
         width: 149
         height: 40
         onPressed: {
-            fileDialogInput.selectFolder = true;
-
+            fileDialogOutput.selectFolder = true;
             fileDialogOutput.visible = true;
         }
         text: qsTr("Select output folder")

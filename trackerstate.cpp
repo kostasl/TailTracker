@@ -28,7 +28,7 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     QString strvidFilename;
     QString stroutDir;
 
-    InputFilefilters << "*.pgm; *.tiff; *.png";
+    InputFilefilters << "*.pgm" <<  "*.tiff" << "*.png" << "*.jpg";
 
     if (parser.has("help"))
     {
@@ -291,9 +291,9 @@ int trackerState::initInputVideoStream()
     QFileInfo videoFile = invideofile;
 
     if (videoFile.isDir())
-       std::clog << "Reading image files from " << videoFile.path().toStdString() << std::endl;
+       std::clog << "Reading image files from " << videoFile.absoluteFilePath().toStdString() << std::endl;
 
-    if (invideofile.path().contains(" ")){
+    if (invideofile.absoluteFilePath().contains(" ")){
         lastError.first = "File paths must not contain spaces ";
         lastError.second = 3;
         std::clog <<  lastError.first.toStdString()  << std::endl;
@@ -305,6 +305,7 @@ int trackerState::initInputVideoStream()
 
     //move to requested start frame
     mptrackerView->setCurrentFrameNumber(startFrame);
+    qDebug() << "Start processing from frame #" << startFrame;
 
     if (endFrame == 0) //If User has not set Stop Point- Set it to end of video
         endFrame =  mptrackerView->endFrameNumber();
@@ -342,6 +343,13 @@ void trackerState::initBGSubstraction()
     //Cap Number of BG training Frames To not exceed number of available frames
     MOGhistory = (mptrackerView->getTotalFrames() < MOGhistory)?mptrackerView->getTotalFrames():MOGhistory;
     MOGLearningRate = max(MOGLearningRate,5.0/MOGhistory); //Adjust Learning Rate To Number of Available Frames
+
+    if (MOGhistory == 0)
+    {
+        lastError.first = "[WARNING] No BG History size, so BG model not computed.";
+        lastError.second = 4;
+        return;
+    }
 
     std::vector<cv::Mat> listImages(MOGhistory);
 

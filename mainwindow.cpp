@@ -39,8 +39,8 @@ mainwindow::mainwindow(QQmlApplicationEngine& engine,trackerState* trackerstate)
      oOutputFileDialog->setProperty("selectFile","output.csv");
      QObject::connect(oOutputFileDialog  , SIGNAL(qmlOutputFileSelectedSig(QString)),
                       this, SLOT(outputFileChangedSlot(QString)));
-     QObject::connect(oOutputFileDialog  , SIGNAL(fileSelected(const QString&)),
-                      this, SLOT(outputFileChangedSlot(QString)));
+     //QObject::connect(oOutputFileDialog  , SIGNAL(fileSelected(const QString&)),
+     //                 this, SLOT(outputFileChangedSlot(QString)));
 
 
 

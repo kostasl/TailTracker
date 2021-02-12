@@ -59,7 +59,7 @@ public:
     uint getCurrentFrameNumber();
     uint endFrameNumber(); //Use Image Sequence file names to obtain last Frame Number
     void setCurrentFrameNumber(uint nFrame);
-    int initInputVideoStream(QFileInfo videofile);
+    int initInputVideoStream(QFileInfo& videofile);
     int initInputVideoStream(QString filename);
     void closeInputStream();
     t_tracker_error getLastError();
@@ -73,6 +73,7 @@ private:
     cv::Mat currentFrame;
    QPixmap pixmap;
    QFileInfo videoFile;
+   QDir videoDir;
    QFileInfoList imageSequenceFiles;
 
    cv::VideoCapture* pcvcapture;

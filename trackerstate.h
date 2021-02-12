@@ -76,30 +76,37 @@ public:
     bool openDataFile();
     void closeDataFile();
     bool saveFrameTrack();
+    /// \brief called after user selects input folder or file - Function appands to list of videos for processing -
+    /// when a directory with an image sequence is added, the  ImageProvider detects and adds the image files in the directory
     void addinputFile(QString filepath){
 
-        invideofile.setFile(filepath) ;
+        invideofile.setFile(filepath);
         videodir.setPath(filepath);
         if (invideofile.exists() && invideofile.isFile())
             invidFileList.append( invideofile.filePath() );
         //Adding Folder Not File
-        if (videodir.exists() && !invideofile.isDir())
+        if (videodir.exists() && invideofile.isDir())
         {
-            if (!videodir.entryInfoList().isEmpty()){
-                invidFileList.append(videodir.entryInfoList(InputFilefilters,QDir::Filter::Files).first().absoluteFilePath());
+            QFileInfoList inputfileList = videodir.entryInfoList(InputFilefilters,QDir::Filter::Files);
+            if (!inputfileList.isEmpty()){
+                invidFileList.append(inputfileList.first().absoluteFilePath());
             }
             else{
                 lastError.first = "Folder " + videodir.path() + " is empty.";
             }
         }
 
-
+        //This is a single video file
+        if (!invideofile.isDir() && invideofile.exists())
+            invidFileList.append(filepath);
 
         //Retain ref to output directory
         if (!invidFileList.isEmpty())
         {
             videodir.setPath(invidFileList.first());
-            //invideofile = invidFileList.first();
+            invidFileList.append(filepath);
+            //invideofile.
+
         }
 
 
@@ -110,8 +117,10 @@ public:
         outdir.setPath((filepath));
         if (!outdir.exists((filepath)))
             outdir.mkdir((filepath));
-
-        outdatafile.setFileName(outdir.path() +"/"+ invideofile.fileName().append(".csv"));
+        if (invideofile.exists())
+            outdatafile.setFileName(outdir.path() +"/"+ invideofile.fileName().append(".csv"));
+        else
+            outdatafile.setFileName(outdir.path() +"/output.csv");
 
         qDebug() << "Output file set to:" << filepath;
     }

@@ -16,8 +16,9 @@ cv::Mat trackerImageProvider::getNextFrame()
             if (imageSequenceFiles.count() > 0){
                 pcvcapture->open(imageSequenceFiles.first().filePath().toStdString());
                 currentFrameNumber = imageSequenceFiles.first().baseName().toInt();
-                std::clog << imageSequenceFiles.first().filePath().toStdString() << std::endl;
                 imageSequenceFiles.pop_front();
+
+                //std::clog << imageSequenceFiles.first().filePath().toStdString() << std::endl;
 
             }
         }
@@ -198,7 +199,7 @@ int trackerImageProvider::initInputVideoStream(QString filename)
 }
 
 /// \returns 0 if error, error retrieved by calling getLastError()
-int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
+int trackerImageProvider::initInputVideoStream(QFileInfo& pvideoFile)
 {
 
     videoFile = pvideoFile;
@@ -211,21 +212,28 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
         ret = 0;
     }else
     {
-        lastError.first = QString("Processing video file") + videoFile.fileName();
+        lastError.first = QString("Processing video in ") + videoFile.fileName();
         lastError.second = 9;
         ret = 1;
     }
 
     //OPEN IMAGE SEQUENCE
-    if (videoFile.suffix() == "pgm" || videoFile.suffix() == "tiff" )
+    if (videoFile.suffix() == "pgm" || videoFile.suffix() == "tiff" || videoFile.isDir())
     {
         QStringList filters;
-        filters << "*." + videoFile.suffix();
+        filters << "*.pgm" << "*.tiff" << "*.png";
 
         inputSourceMode = sourceVideoTypes::ImageSequence;
-        videoFile.dir().setSorting(QDir::SortFlag::Name);
-        imageSequenceFiles  = videoFile.dir().entryInfoList(filters,QDir::Filter::Files);
-        videoFile           = imageSequenceFiles.first();
+
+        videoDir = QDir(videoFile.filePath().append("/") ); //+videoFile.fileName()+"/"
+        imageSequenceFiles = videoDir.entryInfoList(filters,QDir::Filter::Files,QDir::SortFlag::Name);
+       // imageSequenceFiles  = videoDir.entryInfoList(filters,QDir::Filter::Files); //,
+        if (!imageSequenceFiles.isEmpty()){
+            videoFile           = imageSequenceFiles.first();
+        }else{
+            lastError.first = "No Image sequence found in directory " + videoDir.path();
+            lastError.second = 3;
+        }
 
         QString filenamePatt = QString("/%") + (QString::number(videoFile.baseName().length())) + "d." + videoFile .suffix();
         std::string cvFilePattern = QString(videoFile.path() + filenamePatt).toStdString();
@@ -280,6 +288,8 @@ int trackerImageProvider::initInputVideoStream(QFileInfo pvideoFile)
         totalVideoFrames = (pcvcapture->get(CV_CAP_PROP_FRAME_COUNT) );
     }//If Video File
 
+    //Update Parameter
+ pvideoFile = videoFile;
  return (ret);
 }
 
