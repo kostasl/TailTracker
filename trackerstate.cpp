@@ -662,7 +662,7 @@ bool trackerState::isReady()
             bReady = bReady & true;
         }
 
-        if (outdatafile.fileName().isEmpty())
+        if (outdatafile.fileName().length() < 5 )
         {
             //qDebug() << "[Error] Need to set output file to proceed.";
             lastError.first =  "[Error] Need to set output file to proceed.";
