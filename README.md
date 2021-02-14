@@ -31,7 +31,7 @@ make
 
 
 ##  Usage 
-I recommend using the AppImage binary so problems with dependencies is minimized. 
+I recommend using the [AppImage binary](https://github.com/kostasl/TailTracker/releases/download/V1-alpha-kappa/2p-muscope_Tail_Tracker-x86_64-k.AppImage) available in the Releases section, as this may minimize problems with dependencies. 
 The app presents the user with a GUI to select input and output folders.
 Once input video is selected, the background model is automatically calculated using the initial 2000 frames. 
 To define a new spine location and length left click and hold for 1ses. A point and blue arrow will appear which while dragging it allows the the user to define length and initial direction of tail at the point of where the left mouse button is released.
