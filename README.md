@@ -11,7 +11,7 @@ A camera is capturing 200x200 px grey scale images at 470 fps.
         -Install opencv and compile with flag -D WITH_QT=ON, improves experience and range of available functions.
         http://opencv.org/downloads.html. Latest known opencv version that worked with tracker is OpenCV 3.4.4
         -Random number generator library
-    - QT5 or above
+    - QT 5.15.2 was used  
     - GCC
 
 Install prerequisites :
