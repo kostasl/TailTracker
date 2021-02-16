@@ -132,6 +132,8 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
      startFrame = parser.get<uint>("startframe");
      endFrame = parser.get<uint>("stopframe");
 
+     MOGhistory =  parser.get<uint>("BGHistorySize");
+
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
     kernelDilateMOGMask = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(3,3),cv::Point(-1,-1));
@@ -338,8 +340,10 @@ int trackerState::initInputVideoStream()
 /// Save all BGImages on the way and then take the median image for the BG substraction
 /// This BG image reduced in brightness and substracted from image before tracking the tail.
 /// \brief Initialize BG substractor objects, depending on options / can use cuda
+/// \todo check memory contraints - Avoid Crashing
 void trackerState::initBGSubstraction()
 {
+
     //Reset to initial value
     MOGLearningRate = c_MOGLearningRate;
     MOGhistory      = c_MOGhistory;
@@ -355,7 +359,7 @@ void trackerState::initBGSubstraction()
     }
 
     std::vector<cv::Mat> listImages(MOGhistory);
-
+    std::vector<cv::Mat>::iterator lft;
     bPaused = false;
     //Doesn't matter if cuda FLAG is enabled
     pBGsubmodel =  cv::createBackgroundSubtractorMOG2(MOGhistory, MOGVarThreshold,false);
@@ -382,7 +386,17 @@ void trackerState::initBGSubstraction()
         }
         //LearningRate Negative parameter value makes the algorithm to use some automatically chosen learning rate
         pBGsubmodel->apply(frame,fgMask,MOGLearningRate);
-        pBGsubmodel->getBackgroundImage(listImages[i++]);
+
+        try{
+            pBGsubmodel->getBackgroundImage(listImages[i++]);
+        }catch(const std::bad_alloc &)
+        {
+            qDebug() <<  "[ERROR] getting BG Image " << i << ". Memory Allocation Error! Decrease MOGhistory";
+            lft = listImages.begin();
+            listImages.erase(lft);
+
+        }
+
         //cv::imshow("fg MAsk Learning",fgMask);
         //Show Frame Being Processed
         mptrackerView->setNextFrame(listImages[i-1]);
@@ -407,6 +421,7 @@ void trackerState::initBGSubstraction()
 
         }
 
+
     }
 
     setCurrentFrameNumber(startFrame); //Reset To First Frame
@@ -421,6 +436,10 @@ void trackerState::initBGSubstraction()
     // We will sorting pixels where the first mat will get the lowest pixels and the last one, the highest
     for(int i = 0; i < listImages.size(); i++) {
         for(int j = i + 1; j < listImages.size(); j++) {
+
+            if (listImages[i].empty())
+                continue;
+
             listImages[i].copyTo(tmp);
             //Calculates per-element maximum/minimum of two arrays
             cv::min(listImages[i], listImages[j], listImages[i]);
@@ -433,6 +452,7 @@ void trackerState::initBGSubstraction()
 //               listImages[j].copyTo(listImages[i]);
 //               tmp.copyTo(listImages[i]);
 //            }
+            QCoreApplication::processEvents();
         }
     }
     /// We Save the Minimum - ie 1st element - As the background - so any moving components are removed
@@ -441,6 +461,7 @@ void trackerState::initBGSubstraction()
 
    // For Debuging
     cv::imshow("BG Model",listImages[1]);
+    listImages.clear();
    #ifdef _DEBUG
     cv::imshow("Median BG Model image",listImages[listImages.size() / 2]);
     cv::imshow("Lowest PX BG Model image",listImages[1]);

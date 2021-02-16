@@ -105,6 +105,7 @@ int main(int argc, char* argv[]){
         "{BGThreshold bgthres | 30  | Absolute grey value used to segment background}"
         "{startframe s | 1  | Video Will start by Skipping to this frame}"
         "{stopframe e | 0  | Video Will stop at this frame}"
+        "{BGHistorySize bs | 2000  | Max number of initial frames to calculate BG image from}"
         ;
 
     ///Parse Command line Args
