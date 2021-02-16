@@ -1,9 +1,8 @@
-# 2 Photon Tail Tracker
+# Larval zebrafish behavioural analysis tail-tracker 
 
 Author: Konstantinos Lagogiannis 2021
 
-A tail behaviour tracker for larval zebrafish video recorded during 2 photon imaging.
-A camera is capturing 200x200 px grey scale images at 470 fps.
+A tail behaviour tracker for larval zebrafish video recorded during 2 photon imaging by a camera below the objective, which is capturing 200x200 px grey scale images at 470 fps.
 
 ### How do I get set up? ###
 * Dependencies
@@ -42,6 +41,8 @@ Command line options (not exhaustive) include :
  - help : Show all commandline options
  - outputdir  / o :  Folder where tracking data file will be saved in CSV text file
  - invideofile / v :  Behavioural Video file or directory of imagesequence to analyse 
- - FilterPixelNoise/ pn Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}
+ - FilterPixelNoise/ pn Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)
+ - BGHistorySize/bs Max (2000 frames) number of initial frames to calculate BG image from. 
+ 
  
  
