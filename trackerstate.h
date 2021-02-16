@@ -175,12 +175,12 @@ public:
     //double contrastGain = 3.4; //In image Provider
     //double brightness  = 25;
 
-    const int FitTailIntensityScanAngleDeg   = 60; //35
-    const int FishTailSpineSegmentCount      = 15;
-    int FishTailSpineSegmentLength           = 9; //Length of Each Segment
-    double fishBearingRads                 = 26.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default
-    cv::Point ptTailRoot                   = cv::Point(122,48);
-    int FitTailConfigState                 = 0; //A state Machine  register
+    const int FitTailIntensityScanAngleDeg      = 60; //35
+    int FishTailSpineSegmentCount               = 15;
+    int FishTailSpineSegmentLength              = 12; //Length of Each Segment
+    double fishBearingRads                      = 26.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default
+    cv::Point ptTailRoot                        = cv::Point(122,48);
+    int FitTailConfigState                      = 0; //A state Machine  register
 
     t_fishspline tailsplinefit; ///X-Y Coordinates of Fitted spline to contour
 

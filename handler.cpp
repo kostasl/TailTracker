@@ -40,8 +40,8 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     //cv::namedWindow("Trackerdisplay",cv::WINDOW_NORMAL | cv::WINDOW_KEEPRATIO);
     //cv::resizeWindow("Trackerdisplay",250,250);
 
-    QElapsedTimer otLastUpdate; //Time Since Last Progress Report
-    otLastUpdate.start();
+    //QElapsedTimer otLastUpdate; //Time Since Last Progress Report
+    //otLastUpdate.start();
 
     cv::Mat frame,outframe,lastframe;
     unsigned int nFrame         = 0;

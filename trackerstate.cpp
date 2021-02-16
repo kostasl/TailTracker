@@ -5,7 +5,7 @@ using namespace std;
 
 trackerState::trackerState()
 {
-    initSpine();
+
 
 }
 trackerState::~trackerState()
@@ -133,6 +133,7 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
      endFrame = parser.get<uint>("stopframe");
 
      MOGhistory =  parser.get<uint>("BGHistorySize");
+     FishTailSpineSegmentCount =  parser.get<int>("spinepoints");
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
@@ -145,6 +146,8 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     //assert(dGaussContourKernelSize % 2 == 1); //M is an odd number
     //getGaussianDerivs(dGaussContourKernelSigma,dGaussContourKernelSize,gGaussian,dgGaussian,d2gGaussian);
 
+
+    initSpine();
 }
 /// END OF INIT GLOBAL PARAMS //
 
@@ -232,11 +235,12 @@ bool trackerState::saveFrameTrack(){
     //Set Global 1st Spine Direction (Helps to detect Errors)
     assert(tailsplinefit.size() == FishTailSpineSegmentCount);
 
-    datStream << Rad2Deg* tailsplinefit[0].angleRad;
+    datStream << Rad2Deg* tailsplinefit[0].angleRad << "\t" << tailsplinefit[0].x << "\t" << tailsplinefit[0].y;
     //Output Spine Point Angular Deviations from the previous spine/tail Segment in Degrees
-    for (int i=1;i<FishTailSpineSegmentCount;i++)
+    for (int i=1;i<(FishTailSpineSegmentCount-1);i++)
     {
        datStream << "\t" << Rad2Deg*(tailsplinefit[i-1].angleRad - tailsplinefit[i].angleRad);
+       datStream << "\t" << tailsplinefit[i-1].x << "\t" << tailsplinefit[i-1].y;
        // datStream << "\t" << Rad2Deg*angleBetween(cv::Point2f(tailsplinefit[i-1].x,tailsplinefit[i-1].y),  cv::Point2f(tailsplinefit[i].x,tailsplinefit[i].y));
     }
      datStream << "\n";
@@ -259,6 +263,8 @@ void trackerState::processInputKey(char Key)
             bPaused = true;
             bReady = false;
             qDebug() << "User issued exit. ";
+
+            exit(EXIT_SUCCESS);
             break;
 
     case 'T':
@@ -555,9 +561,9 @@ void trackerState::writeFishDataCSVHeader(QFile& data)
 
     /// Write Header //
     QTextStream output(&data);
-    output << "frameN\ttailLengthpx\tThetaSpine_0\t";
+    output << "frameN\ttailLengthpx\tThetaSpine_0\t"<< "\t" "Spine_0_x\t"<< "\t" "Spine_0_y\t";
     for (int i=1;i<FishTailSpineSegmentCount;i++)
-        output <<  "DThetaSpine_" << i << "\t";
+        output <<  "DThetaSpine_" << i << "\t" "Spine_" << i << "_x\t"<< "\t" "Spine_" << i << "_y\t";
 
     output << "\n";
 }
