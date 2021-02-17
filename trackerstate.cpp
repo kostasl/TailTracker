@@ -240,7 +240,7 @@ bool trackerState::saveFrameTrack(){
     for (int i=1;i<(FishTailSpineSegmentCount-1);i++)
     {
        datStream << "\t" << Rad2Deg*(tailsplinefit[i-1].angleRad - tailsplinefit[i].angleRad);
-       datStream << "\t" << tailsplinefit[i-1].x << "\t" << tailsplinefit[i-1].y;
+       datStream << "\t" << tailsplinefit[i].x << "\t" << tailsplinefit[i].y;
        // datStream << "\t" << Rad2Deg*angleBetween(cv::Point2f(tailsplinefit[i-1].x,tailsplinefit[i-1].y),  cv::Point2f(tailsplinefit[i].x,tailsplinefit[i].y));
     }
      datStream << "\n";
@@ -479,6 +479,9 @@ void trackerState::initBGSubstraction()
 /// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
 QFileInfo trackerState::getNextVideoFile()
 {
+    invideofile = QFileInfo();
+    videodir = invideofile.dir();
+
     if (invidFileList.count() >0)
     {
         invideofile.setFile(invidFileList.first());
@@ -489,13 +492,7 @@ QFileInfo trackerState::getNextVideoFile()
         invidFileList.removeFirst();
 
         return (invideofile);
-    }else
-    {   //Empty No Next File Found
-        invideofile = QFileInfo();
-        videodir = invideofile.dir();
-
-
-    }
+    }//If Another File found in List
 
     return(invideofile);
 }

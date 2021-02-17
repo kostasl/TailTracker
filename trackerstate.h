@@ -83,6 +83,7 @@ public:
 
         invideofile.setFile(filepath);
         videodir.setPath(filepath);
+        //This is a single video file
         if (invideofile.exists() && invideofile.isFile())
             invidFileList.append( invideofile.filePath() );
         //Adding Folder Not File
@@ -97,9 +98,6 @@ public:
             }
         }
 
-        //This is a single video file
-        if (!invideofile.isDir() && invideofile.exists())
-            invidFileList.append(filepath);
 
         //Retain ref to output directory
         if (!invidFileList.isEmpty())

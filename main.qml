@@ -163,7 +163,7 @@ Window {
             fileDialogOutput.selectFolder = true;
             fileDialogOutput.visible = true;
         }
-        text: qsTr("Select output folder")
+        text: qsTr("Set output folder")
     }
 
     Button {
