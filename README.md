@@ -46,10 +46,7 @@ Command line options (not exhaustive) include :
 - FilterPixelNoise/ pn Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)
 - BGHistorySize/bs Max (2000 frames) number of initial frames to calculate BG image from. 
 - spinepoints/sp (10)  Number of tail spine points to use.
-
-
-
-
+- saveTrackedFrames/ sf ()false) save output images showing spine tracking in the same output directory as the csv file.
 
 The output file is in tab delimeted csv format. It records the spine point x y coordinate aswell as the orientation of the root segment of the spine, and the angle difference between concecutive spine point thereon up to the tail tip.
 

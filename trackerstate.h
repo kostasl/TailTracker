@@ -77,6 +77,8 @@ public:
     bool openDataFile();
     void closeDataFile();
     bool saveFrameTrack();
+    void saveOutputframe(cv::Mat& outframe); //To save Tracked Frame back out to file
+
     /// \brief called after user selects input folder or file - Function appands to list of videos for processing -
     /// when a directory with an image sequence is added, the  ImageProvider detects and adds the image files in the directory
     void addinputFile(QString filepath){
@@ -143,9 +145,9 @@ public:
     bool bBGReady    = false;
     bool bExiting    = false;
     bool bReady      = false;
-    bool bStartFrameChanged = false;
-    bool bSkipExisting = false; //If An output file exists then do not retrack the video / Skip
-
+    bool bStartFrameChanged     = false;
+    bool bSkipExisting          = false; //If An output file exists then do not retrack the video / Skip
+    bool brecordTrackerFrames    = false; /// Save output images files from GUI frame showing spine
     // Video Processing Flags
     bool bUseBGMOGModelling = true;
     bool bRemovePixelNoise = false;
@@ -184,12 +186,13 @@ public:
     t_fishspline tailsplinefit; ///X-Y Coordinates of Fitted spline to contour
 
 
+    QDir outdir; ///Where CSV and Image Frames are saved
+
 protected:
     trackerImageProvider* mptrackerView; //pointer to external ImageSequence Provider
     void writeFishDataCSVHeader(QFile& data);
 
 private:
-    QDir outdir;
     QDir videodir;
     QFile outdatafile;
     QStringList InputFilefilters;

@@ -107,7 +107,9 @@ int main(int argc, char* argv[]){
         "{stopframe e | 0  | Video Will stop at this frame}"
         "{BGHistorySize bs | 2000  | Max number of initial frames to calculate BG image from}"
         "{spinepoints sp | 8  | Number of tail spine points to use}"
+        "{saveTrackedFrames sf | 0  | Output images showing spine tracking in the same output directory as the csv file }"
         ;
+
 
     ///Parse Command line Args
     cv::CommandLineParser parser(argc, argv, keys);

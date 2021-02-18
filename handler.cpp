@@ -201,6 +201,8 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
         // Display video Image on GUI
         window_main.showCVImage(outframe, nFrame);
+        trackerState.saveOutputframe(outframe);
+
 
         lastframe = frame_denoise; //Save
 

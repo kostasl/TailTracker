@@ -114,6 +114,9 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     if (parser.has("ModelMOG"))
          bUseBGMOGModelling = (parser.get<int>("ModelMOG") == 1)?true:false;
 
+    if (parser.has("saveTrackedFrames"))
+        brecordTrackerFrames = (parser.get<int>("saveTrackedFrames") == 1)?true:false;
+
     //if (parser.has("SkipTracked"))
     //     bSkipExisting = (parser.get<int>("SkipTracked") == 1)?true:false;
 
@@ -152,6 +155,15 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
 /// END OF INIT GLOBAL PARAMS //
 
 
+void trackerState::saveOutputframe(cv::Mat& outframe)
+{
+    QString outFrameFilename = outdir.absolutePath() + "/" + QString::number(mptrackerView->getCurrentFrameNumber()) + ".png";
+
+    if (brecordTrackerFrames)
+         cv::imwrite(outFrameFilename.toStdString() ,outframe);
+
+}
+
 void trackerState::setCurrentFrameNumber(uint nFrame)
 {
     bStartFrameChanged = (nFrame !=mptrackerView->getCurrentFrameNumber());
@@ -181,6 +193,7 @@ cv::Mat  trackerState::getNextFrame()
         nextFrame = mptrackerView->getNextFrame();
         lastError =  mptrackerView->getLastError();
 
+       // Save image file to output folder
      currentFrame = nextFrame;
     return(nextFrame);
 }
@@ -237,7 +250,7 @@ bool trackerState::saveFrameTrack(){
 
     datStream << Rad2Deg* tailsplinefit[0].angleRad << "\t" << tailsplinefit[0].x << "\t" << tailsplinefit[0].y;
     //Output Spine Point Angular Deviations from the previous spine/tail Segment in Degrees
-    for (int i=1;i<(FishTailSpineSegmentCount-1);i++)
+    for (int i=1;i<(FishTailSpineSegmentCount);i++)
     {
        datStream << "\t" << Rad2Deg*(tailsplinefit[i-1].angleRad - tailsplinefit[i].angleRad);
        datStream << "\t" << tailsplinefit[i].x << "\t" << tailsplinefit[i].y;
@@ -560,8 +573,8 @@ void trackerState::writeFishDataCSVHeader(QFile& data)
     /// Write Header //
     QTextStream output(&data);
     output << "frameN\ttailLengthpx\tThetaSpine_0\tSpine_0_x"<< "\t" "Spine_0_y\t";
-    for (int i=1;i<FishTailSpineSegmentCount-1;i++)
-        output <<  "DThetaSpine_" << i << "\t" "Spine_" << i << "_x\t"<< "\t" "Spine_" << i << "_y\t";
+    for (int i=1;i<FishTailSpineSegmentCount;i++)
+        output <<  "DThetaSpine_" << i << "\t" "Spine_" << i << "_x\tSpine_" << i << "_y\t";
 
     output << "\n";
 }
