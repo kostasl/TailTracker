@@ -349,7 +349,7 @@ int trackerState::initInputVideoStream()
 /// \todo check memory contraints - Avoid Crashing
 void trackerState::initBGSubstraction()
 {
-
+    bBGReady = false;
     //Reset to initial value
     MOGLearningRate = c_MOGLearningRate;
     MOGhistory      = c_MOGhistory;
@@ -474,6 +474,7 @@ void trackerState::initBGSubstraction()
     cv::imshow("Highest PX BG Model image",listImages[listImages.size() -1]);
     #endif
 
+    bBGReady = true;
 }
 
 /// \return FileInfo of the next video file on the list, if it exists / Otherwise empty fileinfo structure.
@@ -558,8 +559,8 @@ void trackerState::writeFishDataCSVHeader(QFile& data)
 
     /// Write Header //
     QTextStream output(&data);
-    output << "frameN\ttailLengthpx\tThetaSpine_0\t"<< "\t" "Spine_0_x\t"<< "\t" "Spine_0_y\t";
-    for (int i=1;i<FishTailSpineSegmentCount;i++)
+    output << "frameN\ttailLengthpx\tThetaSpine_0\tSpine_0_x"<< "\t" "Spine_0_y\t";
+    for (int i=1;i<FishTailSpineSegmentCount-1;i++)
         output <<  "DThetaSpine_" << i << "\t" "Spine_" << i << "_x\t"<< "\t" "Spine_" << i << "_y\t";
 
     output << "\n";
@@ -643,6 +644,7 @@ bool trackerState::unloadCurrentVideo()
 bool trackerState::isReady()
 {
     bool bReady = true;
+
     QString invideofileName;
 
     //Get Next File In the Queue and Init Stream
@@ -686,14 +688,18 @@ bool trackerState::isReady()
             bReady = bReady & true;
         }
 
-        if (outdatafile.fileName().length() < 5 )
+        if (outdatafile.exists() )
         {
             //qDebug() << "[Error] Need to set output file to proceed.";
+            bReady = bReady & true; //Needs to combine with previous check being true
+        }else {
+
             lastError.first =  "[Error] Need to set output file to proceed.";
             lastError.second = 2;
             bPaused = true;
-            bReady = bReady & true; //Needs to combine with previous check being true
+            bReady = false;
         }
+
 
 
 

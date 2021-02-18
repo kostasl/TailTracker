@@ -101,6 +101,9 @@ Window {
                       running: true
                       x: 70
                       y: 70
+                    // When Busy disable track
+                   onStateChanged: buttonTrack.enabled = !busyIndicator.running;
+
                   }
 
         }
@@ -169,6 +172,7 @@ Window {
     Button {
         id: buttonTrack
         objectName: "buttonStartTrack"
+        enabled: false
         x: 225
         y: 267
         width: 140
@@ -179,6 +183,7 @@ Window {
             console.log("Starting Tracking...");
             qmlStartTracking();
         }
+
     }
 
     Button {

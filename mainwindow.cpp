@@ -101,11 +101,18 @@ void mainwindow::showCVImage(cv::Mat& img,uint nFrame )
 void mainwindow::setBusyOn()
 {
     busyIndicator->setProperty("running", true );
+    oButtonTrack->setProperty("enabled","false");
 }
+
 
 void mainwindow::setBusyOff()
 {
     busyIndicator->setProperty("running", false );
+
+    if (ptrackerState->isReady())
+        oButtonTrack->setProperty("enabled","true");
+
+
 }
 
 bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
@@ -119,8 +126,12 @@ bool mainwindow::eventFilter(QObject *obj, QEvent *event) {
          ptrackerState->processInputKey(keyEvent->key());
          //if (ptrackerState->bExiting)
              //std::exit(EXIT_SUCCESS);
-
       }
+
+      //eNABLE tRACK bUTTON wHEN CONDITION when Tracker Is ready and not Busy Calculating BG
+      if (ptrackerState->isReady() && !QQmlProperty::read(busyIndicator, "running").toBool()  )
+          oButtonTrack->setProperty("enabled","true");
+
 
 }
 

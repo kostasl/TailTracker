@@ -140,6 +140,7 @@ public:
     bool bROIChanged = true;
     bool bshowMask   = false;
     bool bTracking   = true; //Start By Tracking by default
+    bool bBGReady    = false;
     bool bExiting    = false;
     bool bReady      = false;
     bool bStartFrameChanged = false;
@@ -175,9 +176,9 @@ public:
 
     const int FitTailIntensityScanAngleDeg      = 60; //35
     int FishTailSpineSegmentCount               = 15;
-    int FishTailSpineSegmentLength              = 12; //Length of Each Segment
+    int FishTailSpineSegmentLength              = 14; //Length of Each Segment
     double fishBearingRads                      = 26.0*CV_PI/180.0; //Larval Orientation (Assume 0 Is Vertical Y axis) -Default
-    cv::Point ptTailRoot                        = cv::Point(122,48);
+    cv::Point ptTailRoot                        = cv::Point(115,53);
     int FitTailConfigState                      = 0; //A state Machine  register
 
     t_fishspline tailsplinefit; ///X-Y Coordinates of Fitted spline to contour

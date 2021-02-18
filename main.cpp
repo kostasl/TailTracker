@@ -106,7 +106,7 @@ int main(int argc, char* argv[]){
         "{startframe s | 1  | Video Will start by Skipping to this frame}"
         "{stopframe e | 0  | Video Will stop at this frame}"
         "{BGHistorySize bs | 2000  | Max number of initial frames to calculate BG image from}"
-        "{spinepoints sp | 10  | Number of tail spine points to use}"
+        "{spinepoints sp | 8  | Number of tail spine points to use}"
         ;
 
     ///Parse Command line Args
