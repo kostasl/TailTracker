@@ -140,7 +140,7 @@ plotTailPowerSpectrumInTime <- function(lwlt)
         ,ylab = NA
         ,cex.lab = FONTSZ_AXISLAB
         ,cex.axis=FONTSZ_AXIS
-        ,ylim=c(0,60)
+        ,ylim=c(0,40)
         ,col=ColorRamp
   )
   mtext(side = 1,padj=1,cex=FONTSZ_AXISLAB*1.2, line = 2.2, "Time (msec)", font=2 )
@@ -148,7 +148,6 @@ plotTailPowerSpectrumInTime <- function(lwlt)
   
   #contour(coefSq,add=T)
   #plot(coefSq[,13]   ,type='l') ##Can Plot Single Scale Like So
-  
   
 }
 
@@ -159,8 +158,8 @@ bf_tailClass <- butter(4, c(0.01,0.15),type="pass"); ##Remove DC
 bf_tailClass2 <- butter(4, 0.15,type="low"); ##Remove DC - Cut-off at 60Hz (30 hz is Tailbeat fq)
 nNumberOfComponents   = 20
 nSelectComponents     = 2
-nFrames               = 16000
-vFs                   <- 450
+nFrames               = NROW(datTail)
+vFs                   <- 470
 colClass <- c("#FF0000","#04A022","#0000FF")
 
 vTailDisp <-  medianf(datTail$DThetaSpine_3 + datTail$DThetaSpine_4 + datTail$DThetaSpine_5 + datTail$DThetaSpine_6 + datTail$DThetaSpine_7,vFs/30)
