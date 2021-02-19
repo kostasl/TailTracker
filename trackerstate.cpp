@@ -117,6 +117,9 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     if (parser.has("saveTrackedFrames"))
         brecordTrackerFrames = (parser.get<int>("saveTrackedFrames") == 1)?true:false;
 
+    qDebug() << "Saving tracked frames images to output:" << brecordTrackerFrames;
+
+
     //if (parser.has("SkipTracked"))
     //     bSkipExisting = (parser.get<int>("SkipTracked") == 1)?true:false;
 
@@ -136,7 +139,10 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
      endFrame = parser.get<uint>("stopframe");
 
      MOGhistory =  parser.get<uint>("BGHistorySize");
+     qDebug() << "Using " << MOGhistory << " frames to estimate bg ";
+
      FishTailSpineSegmentCount =  parser.get<int>("spinepoints");
+     qDebug() << "Using " << FishTailSpineSegmentCount << " spine points for tail";
 
     ///* Create Morphological Kernel Elements used in processFrame *///
     kernelOpen          = cv::getStructuringElement(cv::MORPH_CROSS,cv::Size(1,1),cv::Point(-1,-1));
@@ -353,7 +359,7 @@ int trackerState::initInputVideoStream()
         endFrame =  mptrackerView->endFrameNumber();
 
 
-    assert(startFrame <= endFrame);
+    //assert(startFrame <= endFrame);
     //  Check If it contains no Frames And Exit
     if (mptrackerView->getTotalFrames() < 2)
     {
@@ -704,8 +710,8 @@ bool trackerState::isReady()
            {
                //qDebug() << "[Error] Need to select video file to process.";
                //qDebug() << "[Error] " << invideofileName << " Does not exist";
-               lastError.first = "[Error] " + invideofile.fileName() + " Does not exist";
-               lastError.second = 2;
+               //lastError.first = "[Error] " + invideofile.fileName() + " Does not exist";
+               //lastError.second = 2;
                //bPaused = true;
                bReady = false;
             }else

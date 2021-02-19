@@ -13,10 +13,13 @@ cv::Mat trackerImageProvider::getNextFrame()
         {
             //Check if more file  available /If We have not emptied the file list of files
 
-            if (imageSequenceFiles.count() > 0){
-                pcvcapture->open(imageSequenceFiles.first().filePath().toStdString());
-                currentFrameNumber = imageSequenceFiles.first().baseName().toInt();
-                imageSequenceFiles.pop_front();
+            if (imageSequenceFilenames.count() > 0){
+
+                QFileInfo fileFrame(videoDir.path() + "/" +imageSequenceFilenames.first());
+                pcvcapture->open(fileFrame.absoluteFilePath().toStdString());
+
+                currentFrameNumber = fileFrame.baseName().toInt();
+                imageSequenceFilenames.pop_front();
 
                 //std::clog << imageSequenceFiles.first().filePath().toStdString() << std::endl;
 
@@ -108,7 +111,7 @@ bool trackerImageProvider::atLastFrame(){
     //Make sure Current Frame Does not exceed last frame number
     currentFrameNumber = (currentFrameNumber>=totalVideoFrames)?totalVideoFrames:currentFrameNumber;
 
-    return(currentFrameNumber == (totalVideoFrames));
+    return(currentFrameNumber >= (totalVideoFrames));
 }
 
 // TODO: allow for stopping at user provided endFrame
@@ -122,8 +125,11 @@ uint trackerImageProvider::getTotalFrames(){
 
 uint trackerImageProvider::endFrameNumber(){
 
-    if (imageSequenceFiles.count() > 0)
-         endFrame = imageSequenceFiles.last().baseName().toInt()+1;
+    if (imageSequenceFilenames.count() > 0)
+    {
+        QFileInfo lastfile(videoDir.path() + "/" +imageSequenceFilenames.last());
+         endFrame = lastfile.baseName().toInt()+1;
+    }
     else
          endFrame = getTotalFrames();
 
@@ -135,8 +141,11 @@ uint trackerImageProvider::getCurrentFrameNumber(){
 
     if (inputSourceMode == sourceVideoTypes::VideoFile) //Ony for Videos attempt to update FrameNumber
         currentFrameNumber = pcvcapture->get(CV_CAP_PROP_POS_FRAMES);
-    else if (imageSequenceFiles.count() > 0)
-        currentFrameNumber = imageSequenceFiles.first().baseName().toInt();
+    else if (imageSequenceFilenames.count() > 0)
+    {
+        QFileInfo currentfile(videoDir.path() + "/" +imageSequenceFilenames.first());
+        currentFrameNumber = currentfile.baseName().toInt();
+    }
 
     return(currentFrameNumber);
 }
@@ -151,14 +160,17 @@ void trackerImageProvider::setCurrentFrameNumber(uint nFrame)
         pcvcapture->set(CV_CAP_PROP_POS_FRAMES,nFrame);
     else{
         ///Reload Image File List
-        imageSequenceFiles  = videoFile.dir().entryInfoList(filters,QDir::Filter::Files);
+        /// Reverted to String List For Speed
+        imageSequenceFilenames  = imageSequenceFilenames_orig; //videoDir.entryList(filters,QDir::Filter::Files,QDir::SortFlag::Name);//videoFile.dir().entryList(filters,QDir::Filter::Files);
         ///Scan for Desired Current Frame
-        while (imageSequenceFiles.count() > 0)
+        while (imageSequenceFilenames.count() > 0)
         {   //Search for Frame Number in File Name
-            if (imageSequenceFiles.first().baseName().toInt() == nFrame)
+            QFileInfo fileFrame(videoDir.path() + "/" + imageSequenceFilenames.first());
+            if (fileFrame.baseName().toInt() == nFrame)
                 break; //Found File With Set frame Number
             else
-                imageSequenceFiles.pop_front();
+                //imageSequenceFiles.pop_front();
+                imageSequenceFilenames.pop_front();
         }//While desired filename with nFrame number has not been found
     }
 
@@ -181,6 +193,10 @@ void trackerImageProvider::closeInputStream()
         pcvcapture->release();
 
     }
+
+    //Dir Iterator delete -- CRASHES
+    //pvideoDirIt->hasNext();
+    //delete(pvideoDirIt);
 }
 
 
@@ -228,11 +244,24 @@ int trackerImageProvider::initInputVideoStream(QFileInfo& pvideoFile)
 
         inputSourceMode = sourceVideoTypes::ImageSequence;
 
-        videoDir = QDir(videoFile.filePath().append("/") ); //+videoFile.fileName()+"/"
-        imageSequenceFiles = videoDir.entryInfoList(filters,QDir::Filter::Files,QDir::SortFlag::Name);
+        //We Can Only Sort Files If using EntryList
+        if (videoFile.isDir())
+            videoDir = QDir(videoFile.absoluteFilePath().append("/") ); //+videoFile.fileName()+"/"
+        else
+            videoDir = QDir(videoFile.path().append("/") ); //+videoFile.fileName()+"/"
+
+        imageSequenceFilenames = videoDir.entryList(filters,QDir::Filter::Files,QDir::SortFlag::Name);
+
+        //ReInit DirIterator pointer
+          pvideoDirIt.reset(new QDirIterator(videoDir.path(), QDir::Files, QDirIterator::NoIteratorFlags));
+
+
+        //Make A copy for Later
+        imageSequenceFilenames_orig = imageSequenceFilenames;
        // imageSequenceFiles  = videoDir.entryInfoList(filters,QDir::Filter::Files); //,
-        if (!imageSequenceFiles.isEmpty()){
-            videoFile           = imageSequenceFiles.first();
+        if (!imageSequenceFilenames.isEmpty()){
+            QFileInfo vidfile(videoDir.path() + "/" + imageSequenceFilenames.first() );
+            videoFile           = vidfile;
         }else{
             lastError.first = "No Image sequence found in directory " + videoDir.path();
             lastError.second = 3;
@@ -267,7 +296,7 @@ int trackerImageProvider::initInputVideoStream(QFileInfo& pvideoFile)
         }
 
         vidfps = 470;
-        totalVideoFrames =  imageSequenceFiles.count();
+        totalVideoFrames =  imageSequenceFilenames.count();
 
      }//If File Sequence
 

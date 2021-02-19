@@ -148,7 +148,7 @@ int main(int argc, char* argv[]){
 //   }else
 //       writeFishDataCSVHeader(outfishdatafile);
 
-
+    /// \todo replace constant loop - With Event Driven Code
     while (processVideo(omeanWindow,oTrackerstate))
     {
         if(oTrackerstate.bExiting)
@@ -166,9 +166,8 @@ int main(int argc, char* argv[]){
             //exit(0);
             //std::exit(EXIT_SUCCESS);
             return EXIT_SUCCESS;
-        }
-
-      QCoreApplication::processEvents(QEventLoop::AllEvents);
+        }else
+            QCoreApplication::processEvents(QEventLoop::AllEvents);
     }//Main Loop
 
 

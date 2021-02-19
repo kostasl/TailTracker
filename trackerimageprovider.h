@@ -41,6 +41,8 @@ public:
     trackerImageProvider(): QQuickImageProvider(QQuickImageProvider::Pixmap)
     {
          //currentFrame = cv::Mat::zeros(200,200,CV_8U );
+        //pvideoDirIt =
+
     }
     ~trackerImageProvider(){
         closeInputStream();
@@ -84,8 +86,11 @@ private:
    QPixmap pixmap;
    QFileInfo videoFile;
    QDir videoDir;
-   QFileInfoList imageSequenceFiles;
-
+   //Smart Pointer
+   std::unique_ptr<QDirIterator>  pvideoDirIt{new QDirIterator("")};
+   //QFileInfoList imageSequenceFiles;
+    QStringList imageSequenceFilenames;
+    QStringList imageSequenceFilenames_orig;
    cv::VideoCapture* pcvcapture;
 
 

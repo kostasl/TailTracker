@@ -71,7 +71,6 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
 
 
 
-
      //Once BG Donw, Rewind Video
     trackerState.ImageSequenceProvider()->setCurrentFrameNumber(trackerState.startFrame);
 

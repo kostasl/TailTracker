@@ -69,6 +69,26 @@ getfrqscales <- function(nVoices,nOctaves,Fs,w0)
   return(Frq)
 }
 
+
+maxMod <- function(x){ return( which(x == max(x)) ) }
+
+FqRank <- function(wc){
+  N_MODESAMPLES <- 6; ## No of  Low Modes to Exclude
+  FqRank <- which(rank(rev(wc) ) > (NROW(wc)-N_MODESAMPLES)  )  
+  return(FqRank)
+}
+
+FqMedian <- function(fRank)
+{
+  return(median(w.Frq[fRank]))
+}
+
+
+FqMean <- function(fRank)
+{
+  return(mean(w.Frq[fRank]))
+}
+
 ## Uses Wavelets to obtain the power Fq Spectrum of the tail beat in time
 ## w input wave 
 ## returns the original object w, augmented with w.cwt w.coefSq (Power) etc.
@@ -89,25 +109,30 @@ getPowerSpectrumInTime <- function(w,Fs)
   
   ##Remove Missing Values
   w <- na.omit(w) 
+  message("continuous wavelet transform..")
   w.cwt <- cwt(w,noctave=w.nOctaves,nvoice=w.nVoices,plot=FALSE,twoD=TRUE,w0=w.W0)
   w.coefSq <- Mod(w.cwt)^2 #Power
   
-  w.Frq <- getfrqscales(w.nVoices,w.nOctaves,w.Fs,w.W0)
+  ##Set globally so FqMedian can call it 
+  w.Frq <<- getfrqscales(w.nVoices,w.nOctaves,w.Fs,w.W0)
   
   ###Make Vector Of Maximum Power-Fq Per Time Unit
   vFqMed <- rep(0,NROW(w.coefSq))
-  for (i in 1:NROW(w.coefSq) )
-  {
+  message("Calc Fq Mode - by of high rank modes median...")
+  ##matrix 1 indicates rows, 2 indicates columns, c(1, 2) 
+  w.FqRank <- apply(w.coefSq,1,FqRank)
+  ## Calc Median Frequency As Mod
+  w.FqMod <- apply(w.FqRank,2,FqMedian)
+  
+  #for (i in 1:NROW(w.coefSq) )
+  #{
     ##Where is the Max Power at Each TimeStep?
-    idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
-    FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-N_MODESAMPLES)  )
-    vFqMed[i] <- median(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
-  }
-  
-  
-  w.FqMod <-vFqMed #
-  # X11()
-  #  plot(vFqMed,type='l')
+  #  idxDomFq <- which(w.coefSq[i,NROW( w.Frq):1] == max(w.coefSq[i,NROW(w.Frq):1]))
+  #  FqRank <- which(rank(w.coefSq[i,NROW(w.Frq):1] ) > (NROW(w.Frq)-N_MODESAMPLES)  )
+  #  vFqMed[i] <- median(w.Frq[FqRank]) # sum(w.coefSq[i,NROW(w.Frq):1]*w.Frq)/sum(w.Frq) #/sum(w.coefSq[i,NROW(w.Frq):1]) #w.Frq[idxDomFq] #max(coefSq[i,idxDomFq]*Frq[idxDomFq]) #sum(coefSq[i,NROW(Frq):1]*Frq)/sum(Frq) #lapply(coefSq[,NROW(Frq):1],median)
+  #}
+ 
+ 
   return (list(wavedata=w,nVoices=w.nVoices,nOctaves=w.nOctaves ,MorletFrequency=w.W0, cwt=w.cwt,cwtpower=w.coefSq,Frq=w.Frq,freqMode=w.FqMod,Fs=w.Fs) )
 }
 
@@ -155,20 +180,19 @@ datTail <- read.csv2('/home/kostasl/workspace/2pTailTracker/datTrack/201020_F1_7
 
 
 bf_tailClass <- butter(4, c(0.01,0.15),type="pass"); ##Remove DC
-bf_tailClass2 <- butter(4, 0.15,type="low"); ##Remove DC - Cut-off at 60Hz (30 hz is Tailbeat fq)
-nNumberOfComponents   = 20
-nSelectComponents     = 2
-nFrames               = NROW(datTail)
+bf_tailClass2 <- butter(4, 0.17,type="low"); ##Remove DC - Cut-off at 60Hz (30 hz is Tailbeat fq)
 vFs                   <- 470
+nFrames               = NROW(vTailDisp)
 colClass <- c("#FF0000","#04A022","#0000FF")
 
 vTailDisp <-  medianf(datTail$DThetaSpine_3 + datTail$DThetaSpine_4 + datTail$DThetaSpine_5 + datTail$DThetaSpine_6 + datTail$DThetaSpine_7,vFs/30)
 vTailDisp <- filtfilt(bf_tailClass2, clipAngleRange(vTailDisp,-120,120))
 
 lwlt <- getPowerSpectrumInTime(head(vTailDisp,nFrames),vFs )##Fix Length Differences
-x <- lwlt$freqMode
-plotTailPowerSpectrumInTime(lwlt)
 
-plot(head(vTailDisp,nFrames),type='l')
+plot(1:NROW(lwlt$freqMode)/vFs,lwlt$freqMode,type='l',xlab="Time (sec)",ylab="Tail beat Fq Mode (Hz)")
+#plotTailPowerSpectrumInTime(lwlt)
+
+plot(1:(nFrames)/vFs,head(vTailDisp,nFrames),type='l')
 
 
