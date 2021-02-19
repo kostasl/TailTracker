@@ -51,3 +51,17 @@ Command line options (not exhaustive) include :
 The output file is in tab delimeted csv format. It records the spine point x y coordinate aswell as the orientation of the root segment of the spine, and the angle difference between concecutive spine point thereon up to the tail tip.
 
 One can either make use of the raw x, y coordinates of each spine point, or directly use the angle differences between spine segments to estimate tail curvature.
+
+
+
+# Shortcut keys:
+
+* r to start tracking
+
+* p to Pause
+
+* f to increase bg substraction contrast
+
+* g to decrease bg substraction contrast
+
+* q to quit

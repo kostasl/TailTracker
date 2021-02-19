@@ -300,6 +300,20 @@ void trackerState::processInputKey(char Key)
     case 'R':
     case 'r':
         startTracking();
+        break;
+
+    case 'f':
+    case 'F':
+        BGSubContrast += 0.01;
+        qDebug() << "Bg sub contrast:"  << BGSubContrast;
+        break;
+
+    case 'g':
+    case 'G':
+        BGSubContrast -= 0.01;
+        qDebug() << "Bg sub contrast:"  << BGSubContrast;
+        break;
+
     }
 }
 

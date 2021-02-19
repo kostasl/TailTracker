@@ -3,6 +3,7 @@ import QtQuick.Window 2.10
 import QtQuick.Controls 2.3
 //import QtQuick.Dialogs.qml 1.0
 import QtQuick.Dialogs 1.2
+//import QtQuick.Controls.Universal 2.12
 
 Window {
     id:mainWindow
@@ -103,6 +104,8 @@ Window {
                       y: 70
                     // When Busy disable track
                    onStateChanged: buttonTrack.enabled = !busyIndicator.running;
+                   palette.dark: "blue"
+                   //Universal.accent: Universal.Orange // set color
 
                   }
 

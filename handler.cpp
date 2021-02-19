@@ -148,13 +148,14 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
         cvtColor( bgFrame,  bgFrame, COLOR_BGR2GRAY ); // Convert the image to grayscale
         //cvtColor( frame_denoise, frame_denoise, CV_8UC1 ); // Convert the image to grayscale
 
-        bgFrame.convertTo(bgFrame,-1,0.6,-1);
+        bgFrame.convertTo(bgFrame,-1,trackerState.BGSubContrast,trackerState.BGSubBrightness);
         cv::absdiff(frame_denoise, bgFrame,frame_diff );
         frame_diff.copyTo(frame_denoise);
 
+         cv::imshow("FG Processing img", frame_denoise);
 #if _DEBUG
         cv::imshow("BG Image",bgFrame);
-        cv::imshow("Denoised And Blured And B&C Increased", frame_denoise);
+
         cv::imshow("Substracted Denoised And Blured And B&C Increased", frame_denoise);
 #endif
 
