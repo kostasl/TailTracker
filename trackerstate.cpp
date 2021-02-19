@@ -145,6 +145,12 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
     kernelClose         = cv::getStructuringElement(cv::MORPH_ELLIPSE,cv::Size(5,5),cv::Point(-1,-1));
 
     mptrackerView = ptrackerView;
+
+    assert(ptrackerView);
+    //Set Brightness Contrast
+    ptrackerView->setConstrast(parser.get<double>("contrast"));
+    ptrackerView->setBrightness(parser.get<double>("brightness"));
+
     /// create Gaussian Smoothing kernels for Contour //
     //assert(dGaussContourKernelSize % 2 == 1); //M is an odd number
     //getGaussianDerivs(dGaussContourKernelSigma,dGaussContourKernelSize,gGaussian,dgGaussian,d2gGaussian);

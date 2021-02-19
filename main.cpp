@@ -96,7 +96,7 @@ int main(int argc, char* argv[]){
         "{invideofile v |    | Behavioural Video file to analyse }"
         "{invideolist f |    | A text file listing full path to video files to process}"
         "{logtofile l |    | Filename to save clog stream to }"
-        "{ModelMOG b | 1  | Learn and Substract Stationary Objects from Foreground mask}"
+        "{ModelMOG m | 1  | Learn and Substract Stationary Objects from Foreground mask}"
         "{SkipTracked t | 0  | Skip Previously Tracked Videos}"
         "{FilterPixelNoise pn | 0  | Filter Pixel Noise During Tracking (Note:This has major perf impact so use only when necessary due to pixel noise. BGProcessing does it by default)}"
         "{DisableOpenCL ocl | 0  | Disabling the use of OPENCL can avoid some SEG faults hit when running multiple trackers in parallel}"
@@ -108,6 +108,8 @@ int main(int argc, char* argv[]){
         "{BGHistorySize bs | 2000  | Max number of initial frames to calculate BG image from}"
         "{spinepoints sp | 8  | Number of tail spine points to use}"
         "{saveTrackedFrames sf | 0  | Output images showing spine tracking in the same output directory as the csv file }"
+        "{brightness b | 45.0  | Brightness adjust input images prior to tracking  }"
+        "{contrast c | 2.4  | Contrast adjust input images prior to tracking  }"
         ;
 
 

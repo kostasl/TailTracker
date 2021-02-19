@@ -34,7 +34,8 @@ enum class sourceVideoTypes
 
 class  trackerImageProvider : public QQuickImageProvider
 {
-    //friend class trackerState; //So it can access members for frame
+
+    friend class trackerState; //So it can access members for frame
 
 public:
     trackerImageProvider(): QQuickImageProvider(QQuickImageProvider::Pixmap)
@@ -62,6 +63,15 @@ public:
     int initInputVideoStream(QFileInfo& videofile);
     int initInputVideoStream(QString filename);
     void closeInputStream();
+    void setBrightness(double B){
+        brightness = B;
+        qDebug() << "Brighness adjust set to :" << B;
+    }
+    void setConstrast(double C){
+        qDebug() << "Contrast adjust set to :" << C;
+        contrastGain  = C;
+    }
+
     t_tracker_error getLastError();
 
 
