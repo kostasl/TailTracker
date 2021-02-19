@@ -172,7 +172,7 @@ public:
     const double c_MOGLearningRate = 0.01; //0.0001
     const double MOGNominamLearningRate = 0.0;
 
-    double BGSubContrast = 0.85; //The BG Image contrast is adjusted before substraction
+    double BGSubContrast = 0.72; //The BG Image contrast is adjusted before substraction
     double BGSubBrightness = -1.0;
 
     cv::Mat bgFrame;
