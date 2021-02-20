@@ -151,6 +151,7 @@ int main(int argc, char* argv[]){
     /// \todo replace constant loop - With Event Driven Code
     while (processVideo(omeanWindow,oTrackerstate))
     {
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
         if(oTrackerstate.bExiting)
         {
             omeanWindow.LogEvent("Goodbye!",0);
@@ -166,8 +167,7 @@ int main(int argc, char* argv[]){
             //exit(0);
             //std::exit(EXIT_SUCCESS);
             return EXIT_SUCCESS;
-        }else
-            QCoreApplication::processEvents(QEventLoop::AllEvents);
+        }
     }//Main Loop
 
 

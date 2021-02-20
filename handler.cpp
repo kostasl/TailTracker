@@ -53,8 +53,14 @@ unsigned int processVideo(mainwindow& window_main, trackerState& trackerState)
     /// Do checks for param and initialize inputStream
     if (!trackerState.isReady())
         return 1; //Wait Until Ready
-    else
+    else{
+        window_main.setBusyOn();
+        window_main.LogEvent(QString("Loading and sorting input files"),5 );
+        QCoreApplication::processEvents(QEventLoop::AllEvents);
         trackerState.initInputVideoStream(); //Draws The 1st file from List
+        window_main.LogEvent(QString("Done loading and sorting file list "),5 );
+        window_main.setBusyOff();
+    }
 
     t_tracker_error lastError = trackerState.getLastError();
     window_main.LogEvent(lastError.first,lastError.second);

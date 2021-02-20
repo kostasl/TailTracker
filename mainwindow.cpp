@@ -68,7 +68,7 @@ void mainwindow::LogEvent(QString msg,int AlertLevel)
 {
 
   QString strMsg = QQmlProperty::read(txtLog, "text").toString();
-  strMsg = strMsg.append(  QDateTime::currentDateTime().toString()+ QString("<b>")+ msg + QString("</b><br>") );
+  strMsg = strMsg.append( "<br>" + QDateTime::currentDateTime().toString()+ QString("<b>")+ msg + QString("</b>") );
    //Append to text Widget
    txtLog->setProperty("text", strMsg ); //+ QString("Application Started")
    std::clog << strMsg.toStdString() << std::endl;

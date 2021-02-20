@@ -346,6 +346,7 @@ int trackerState::initInputVideoStream()
         std::clog <<  lastError.first.toStdString()  << std::endl;
     }
 
+
     int ret    = mptrackerView->initInputVideoStream(videoFile);
     startFrame = mptrackerView->startFrame;
     lastError  = mptrackerView->getLastError();
@@ -393,7 +394,7 @@ void trackerState::initBGSubstraction()
     MOGLearningRate = c_MOGLearningRate;
     MOGhistory      = c_MOGhistory;
     //Cap Number of BG training Frames To not exceed numbe;r of available frames
-    MOGhistory = (mptrackerView->getTotalFrames() < MOGhistory)?mptrackerView->getTotalFrames():MOGhistory;
+    MOGhistory = (mptrackerView->getTotalFrames() < MOGhistory)?(mptrackerView->getTotalFrames()-1):MOGhistory;
     MOGLearningRate = max(MOGLearningRate,5.0/MOGhistory); //Adjust Learning Rate To Number of Available Frames
 
     if (MOGhistory == 0)
@@ -420,7 +421,7 @@ void trackerState::initBGSubstraction()
 
     int i = 0;
     //Get BGImage
-    while (i < MOGhistory && (!atLastFrame()))
+    while (i < MOGhistory && !atLastFrame())
     {
         frame = mptrackerView->getNextFrame();
         lastError = mptrackerView->getLastError();
@@ -465,7 +466,6 @@ void trackerState::initBGSubstraction()
              QSurfaceFormat::setDefaultFormat( format );
 
         }
-
 
     }
 
