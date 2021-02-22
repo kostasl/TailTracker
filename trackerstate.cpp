@@ -172,7 +172,9 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
 
 void trackerState::saveOutputframe(cv::Mat& outframe)
 {
-    QString outFrameFilename = outdir.absolutePath() + "/" + QString::number(mptrackerView->getCurrentFrameNumber()) + ".png";
+    QString framenumber = QStringLiteral("%1").arg(mptrackerView->getCurrentFrameNumber(), 10, 10, QLatin1Char('0'));
+
+    QString outFrameFilename = outdir.absolutePath() + "/" + framenumber + ".png";
 
     if (brecordTrackerFrames)
          cv::imwrite(outFrameFilename.toStdString() ,outframe);
