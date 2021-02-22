@@ -30,11 +30,6 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
 
     InputFilefilters << "*.pgm" <<  "*.tiff" << "*.png" << "*.jpg";
 
-    if (parser.has("help"))
-    {
-        parser.printMessage();
-        return;
-    }
 
  /// Check if vid file provided in arguments.
  /// If File exists added to video file list, otherwise save directory and open dialogue to choose a file from there
@@ -163,6 +158,14 @@ trackerState::trackerState(cv::CommandLineParser& parser, trackerImageProvider* 
 
 
     initSpine();
+
+
+    if (parser.has("help"))
+    {
+        parser.printMessage();
+        bExiting = true;
+    }
+
 }
 /// END OF INIT GLOBAL PARAMS //
 

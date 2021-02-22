@@ -39,6 +39,7 @@ using namespace cv;
 
 //QElapsedTimer gTimer;
 
+#define _VER "v1.0alpha-q"
 
 int main(int argc, char* argv[]){
 
@@ -117,15 +118,17 @@ int main(int argc, char* argv[]){
     cv::CommandLineParser parser(argc, argv, keys);
 
     stringstream ssMsg;
-    ssMsg<<"Larval Zebrafish Tail Tracker"<< std::endl;
+    ssMsg<<"Larval Zebrafish Tail Tracker" << _VER << std::endl;
     ssMsg<<"--------------------------" << std::endl;
     ssMsg<<"Author : Konstantinos Lagogiannis 2021, King's College London"<<std::endl;
     ssMsg<< "email: costaslag@gmail.com"<<std::endl;
-    ssMsg<<"./2pTailTrack <outfolder> <inVideoFile> "<<std::endl;
-    ssMsg<<"(note: output folder is automatically generated when absent)"<<std::endl;
-    ssMsg << "Example: \n : " << std::endl;
-    ssMsg << "./2pTailTrack  -o=./Tracked30-11-21/" << std::endl;
-    ssMsg << "-Make Sure QT can be found : use export LD_LIBRARY_PATH= path to Qt/5.11.1/gcc_64/lib/  " << std::endl;
+    ssMsg<< "https://github.com/kostasl/TailTracker \n"<<std::endl;
+
+    ssMsg << "Example: : " << std::endl;
+    ssMsg<<"./2pTailTrack --outputdir=<outfolder> --invideofile<somedir or videofile> --saveTrackedFrames=1"<<std::endl;
+    ssMsg<<"(note: output folder is automatically generated if missing)"<<std::endl;
+    ssMsg << "Keys : q:Quit, p:Pause, r:Run, f:Stronger BG substraction, g:less BG substraction "<< std::endl;
+    //ssMsg << "-Make Sure QT can be found : use export LD_LIBRARY_PATH= path to Qt/5.11.1/gcc_64/lib/  " << std::endl;
     parser.about(ssMsg.str() );
 
 

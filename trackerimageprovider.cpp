@@ -37,9 +37,10 @@ cv::Mat trackerImageProvider::getNextFrame()
                 //I am still Poping from Stringlist as this QDirIterator was adapted Ontopo of a Preloading list technique
                 imageSequenceFilenames_orig.append(imageSequenceFilenames.first()); //Save for later
                 imageSequenceFilenames.pop_front();
+#ifdef _DEBUG
                 qDebug() << QString::number(currentFrameNumber) << " " << pvideoDirIt->fileName();
-
                 //std::clog << imageSequenceFiles.first().filePath().toStdString() << std::endl;
+#endif
 
             }
         }
@@ -276,6 +277,7 @@ int trackerImageProvider::initInputVideoStream(QFileInfo& pvideoFile)
         else
             videoDir = QDir(videoFile.path().append("/"),"*",QDir::Name, QDir::Files ); //+videoFile.fileName()+"/"
 
+        qDebug() << "[INFO] Set directory file filters";
         videoDir.setNameFilters(filters);
 
         //qDebug() << "[INFO] Loading sorted list of images from input folder...";
